@@ -16,10 +16,12 @@ export const actionController = {
         SELECT
           a.id, a.title, a.description, a.type, a.due_date, a.priority, a.status, a.created_at, a.completed_at,
           d.id as document_id, d.title as document_title, d.provider,
-          c.name as category_name, c.color as category_color, c.icon as category_icon
+          c.name as category_name, c.color as category_color, c.icon as category_icon,
+          r.id as reminder_id, r.calendar_sync_status, r.google_calendar_event_id
         FROM actions a
         JOIN documents d ON a.document_id = d.id
         LEFT JOIN categories c ON d.category_id = c.id
+        LEFT JOIN reminders r ON r.action_id = a.id
         WHERE d.user_id = $1
       `;
       const params: any[] = [userId];

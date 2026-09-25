@@ -99,3 +99,5 @@ Actionable Dashboard + Natural Language Search + Version History
 8. **Document Relationships:** Maps linkages between vehicles, policies, and service records (e.g. Service Record $\leftrightarrow$ Vehicle Insurance).
 9. **Family Vault Spaces:** Role-based access control (`OWNER`, `EDITOR`, `VIEWER`) for shared household and family documents.
 10. **Audit Trail:** Immutable logging of document uploads, AI extractions, verifications, and action completions.
+11. **Google Calendar Cross-Device Sync:** OAuth 2.0 calendar integration creating automated events and multi-stage alarms (30d, 7d, 1d) on users' Google Calendars for native smartphone notifications on Android & iOS without exposing sensitive document content.
+

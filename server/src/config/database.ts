@@ -29,6 +29,16 @@ class SQLiteDatabaseClient implements IDatabaseClient {
         .replace(/TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP/gi, 'TEXT DEFAULT (datetime(\'now\'))')
         .replace(/TIMESTAMP WITH TIME ZONE/gi, 'TEXT');
       this.db.exec(schemaSql);
+      // Auto-migrate newly added columns for existing SQLite tables if not present
+      try {
+        this.db.exec(`ALTER TABLE reminders ADD COLUMN google_calendar_event_id TEXT;`);
+      } catch {}
+      try {
+        this.db.exec(`ALTER TABLE reminders ADD COLUMN calendar_sync_status TEXT DEFAULT 'NOT_CONNECTED';`);
+      } catch {}
+      try {
+        this.db.exec(`ALTER TABLE reminders ADD COLUMN updated_at TEXT;`);
+      } catch {}
       this.seedDefaultCategories();
     }
   }

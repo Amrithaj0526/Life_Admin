@@ -113,8 +113,27 @@ CREATE TABLE IF NOT EXISTS reminders (
     scheduled_for TEXT NOT NULL,
     sent_at TIMESTAMP WITH TIME ZONE,
     status TEXT NOT NULL DEFAULT 'SCHEDULED', -- SCHEDULED, SENT, CANCELLED
-    channel TEXT NOT NULL DEFAULT 'IN_APP', -- IN_APP, EMAIL
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+    channel TEXT NOT NULL DEFAULT 'IN_APP', -- IN_APP, EMAIL, GOOGLE_CALENDAR
+    google_calendar_event_id TEXT,
+    calendar_sync_status TEXT DEFAULT 'NOT_CONNECTED', -- NOT_CONNECTED, PENDING, SYNCED, FAILED, DISCONNECTED
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 9b. Google Calendar OAuth Tokens per user
+CREATE TABLE IF NOT EXISTS google_calendar_tokens (
+    id TEXT PRIMARY KEY,
+    user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    email TEXT,
+    access_token TEXT NOT NULL,
+    refresh_token TEXT,
+    scope TEXT,
+    token_type TEXT,
+    expiry_date INTEGER,
+    sync_enabled INTEGER DEFAULT 1,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(user_id)
 );
 
 -- 10. Document Relationships

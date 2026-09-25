@@ -10,7 +10,8 @@ import {
   LogOut,
   Shield,
   Bell,
-  Sparkles
+  Sparkles,
+  Calendar
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
@@ -31,6 +32,7 @@ export const MainLayout: React.FC = () => {
     { to: '/search', label: 'Search & Natural Q&A', icon: Search },
     { to: '/vaults', label: 'Family Vault', icon: Users },
     { to: '/audit-trail', label: 'Audit Trail', icon: Shield },
+    { to: '/settings', label: 'Calendar & Settings', icon: Calendar },
   ];
 
   return (

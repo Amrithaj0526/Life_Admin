@@ -49,6 +49,15 @@ export interface ActionItem {
   provider?: string;
   category_name?: string;
   category_color?: string;
+  reminder_id?: string;
+  calendar_sync_status?: 'NOT_CONNECTED' | 'PENDING' | 'SYNCED' | 'FAILED' | 'DISCONNECTED';
+  google_calendar_event_id?: string;
+}
+
+export interface GoogleCalendarStatus {
+  connected: boolean;
+  email?: string;
+  syncEnabled?: boolean;
 }
 
 export interface FieldDiff {

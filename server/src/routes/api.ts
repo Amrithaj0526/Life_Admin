@@ -7,6 +7,7 @@ import { searchController } from '../controllers/searchController.js';
 import { relationshipController } from '../controllers/relationshipController.js';
 import { vaultController } from '../controllers/vaultController.js';
 import { lifecycleController } from '../controllers/lifecycleController.js';
+import { calendarController } from '../controllers/calendarController.js';
 import { authenticate } from '../middleware/auth.js';
 import { uploadMiddleware } from '../middleware/upload.js';
 import { getDatabase } from '../config/database.js';
@@ -72,3 +73,12 @@ apiRouter.get('/documents/:id/compare-versions', authenticate, lifecycleControll
 
 // Audit History Trail
 apiRouter.get('/audit-logs', authenticate, lifecycleController.getAuditLogs);
+
+// Google Calendar Integration Routes
+apiRouter.get('/calendar/google/connect', authenticate, calendarController.getConnectUrl);
+apiRouter.get('/calendar/google/callback', calendarController.handleCallback);
+apiRouter.get('/calendar/google/status', authenticate, calendarController.getStatus);
+apiRouter.delete('/calendar/google/disconnect', authenticate, calendarController.disconnect);
+apiRouter.post('/calendar/google/sync-all', authenticate, calendarController.syncAll);
+apiRouter.post('/calendar/google/sync/:reminderId', authenticate, calendarController.syncReminder);
+apiRouter.delete('/calendar/google/event/:reminderId', authenticate, calendarController.removeEvent);

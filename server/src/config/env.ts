@@ -18,6 +18,9 @@ export interface Config {
   aiProvider: 'gemini' | 'mock';
   geminiApiKey: string;
   ocrEngine: 'tesseract' | 'mock';
+  googleClientId: string;
+  googleClientSecret: string;
+  googleRedirectUri: string;
 }
 
 const uploadPath = path.resolve(process.cwd(), process.env.UPLOAD_DIR || '../uploads');
@@ -38,4 +41,7 @@ export const config: Config = {
   aiProvider: (process.env.AI_PROVIDER as any) || 'mock',
   geminiApiKey: process.env.GEMINI_API_KEY || '',
   ocrEngine: (process.env.OCR_ENGINE as any) || 'mock',
+  googleClientId: process.env.GOOGLE_CLIENT_ID || '',
+  googleClientSecret: process.env.GOOGLE_CLIENT_SECRET || '',
+  googleRedirectUri: process.env.GOOGLE_REDIRECT_URI || 'http://localhost:5000/api/calendar/google/callback',
 };

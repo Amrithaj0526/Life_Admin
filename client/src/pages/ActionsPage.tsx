@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { CheckCircle2, Calendar, CheckSquare } from 'lucide-react';
+import { CheckCircle2, Calendar, CheckSquare, RefreshCw, Smartphone } from 'lucide-react';
+import confetti from 'canvas-confetti';
 import { api } from '../services/api';
 import type { ActionItem } from '../types';
 
@@ -30,6 +31,17 @@ export const ActionsPage: React.FC = () => {
   const handleComplete = async (id: string) => {
     try {
       await api.post(`/actions/${id}/complete`);
+      fetchActions();
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleSyncReminder = async (reminderId?: string) => {
+    if (!reminderId) return;
+    try {
+      await api.post(`/calendar/google/sync/${reminderId}`);
+      confetti({ particleCount: 50, spread: 60, origin: { y: 0.7 } });
       fetchActions();
     } catch (err) {
       console.error(err);
@@ -120,6 +132,26 @@ export const ActionsPage: React.FC = () => {
                     <Calendar className="w-3.5 h-3.5" />
                     <span>Due: {item.due_date}</span>
                   </span>
+                  {item.calendar_sync_status === 'SYNCED' ? (
+                    <>
+                      <span>•</span>
+                      <span className="inline-flex items-center space-x-1 text-blue-700 bg-blue-50 px-2 py-0.5 rounded-md font-bold text-[11px] border border-blue-200/50">
+                        <Smartphone className="w-3 h-3 text-blue-600" />
+                        <span>Google Calendar Synced ✓</span>
+                      </span>
+                    </>
+                  ) : item.reminder_id ? (
+                    <>
+                      <span>•</span>
+                      <button
+                        onClick={() => handleSyncReminder(item.reminder_id)}
+                        className="inline-flex items-center space-x-1 text-slate-600 hover:text-blue-700 bg-slate-100 hover:bg-blue-50 px-2 py-0.5 rounded-md font-bold text-[11px] border border-slate-200 transition"
+                      >
+                        <RefreshCw className="w-3 h-3" />
+                        <span>Sync with Google Calendar</span>
+                      </button>
+                    </>
+                  ) : null}
                 </div>
               </div>
 
