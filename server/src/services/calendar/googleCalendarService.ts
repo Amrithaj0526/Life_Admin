@@ -11,59 +11,111 @@ export interface CalendarEventPayload {
 }
 
 export class GoogleCalendarService {
-  private static getOAuth2Client() {
+  // Retrieve effective Google OAuth credentials (database settings take priority over .env)
+  static async getEffectiveCredentials(): Promise<{ clientId: string; clientSecret: string; redirectUri: string }> {
+    try {
+      const db = await getDatabase();
+      const idRes = await db.query(`SELECT value FROM system_settings WHERE key = 'GOOGLE_CLIENT_ID'`);
+      const secRes = await db.query(`SELECT value FROM system_settings WHERE key = 'GOOGLE_CLIENT_SECRET'`);
+
+      const dbClientId = idRes.rows[0]?.value;
+      const dbClientSecret = secRes.rows[0]?.value;
+
+      return {
+        clientId: (dbClientId || config.googleClientId || '').trim(),
+        clientSecret: (dbClientSecret || config.googleClientSecret || '').trim(),
+        redirectUri: config.googleRedirectUri,
+      };
+    } catch {
+      return {
+        clientId: config.googleClientId.trim(),
+        clientSecret: config.googleClientSecret.trim(),
+        redirectUri: config.googleRedirectUri,
+      };
+    }
+  }
+
+  // Get configuration status for settings page
+  static async getCredentialsStatus(): Promise<{ configured: boolean; clientId: string; hasSecret: boolean; redirectUri: string }> {
+    const creds = await this.getEffectiveCredentials();
+    return {
+      configured: Boolean(creds.clientId && creds.clientSecret),
+      clientId: creds.clientId,
+      hasSecret: Boolean(creds.clientSecret),
+      redirectUri: creds.redirectUri,
+    };
+  }
+
+  // Save user-provided Google OAuth credentials
+  static async saveCredentials(clientId: string, clientSecret: string): Promise<void> {
+    const db = await getDatabase();
+    // Check if system_settings exists, SQLite insert or replace
+    await db.query(
+      `INSERT INTO system_settings (key, value) VALUES ('GOOGLE_CLIENT_ID', $1)
+       ON CONFLICT(key) DO UPDATE SET value = $1, updated_at = CURRENT_TIMESTAMP`,
+      [clientId.trim()]
+    );
+    await db.query(
+      `INSERT INTO system_settings (key, value) VALUES ('GOOGLE_CLIENT_SECRET', $1)
+       ON CONFLICT(key) DO UPDATE SET value = $1, updated_at = CURRENT_TIMESTAMP`,
+      [clientSecret.trim()]
+    );
+    config.googleClientId = clientId.trim();
+    config.googleClientSecret = clientSecret.trim();
+  }
+
+  private static async getOAuth2Client() {
+    const creds = await this.getEffectiveCredentials();
     return new google.auth.OAuth2(
-      config.googleClientId,
-      config.googleClientSecret,
-      config.googleRedirectUri
+      creds.clientId,
+      creds.clientSecret,
+      creds.redirectUri
     );
   }
 
   // 1. Generate Auth URL for user to grant calendar permission
-  static getAuthUrl(userId: string): string {
-    if (!config.googleClientId || !config.googleClientSecret) {
-      // In local dev without credentials, provide a mock redirect that simulates success
-      return `${config.clientUrl}/settings?demo_google_connect=true`;
+  static async getAuthUrl(userId: string): Promise<{ url?: string; configured: boolean; message?: string }> {
+    const creds = await this.getEffectiveCredentials();
+    if (!creds.clientId || !creds.clientSecret) {
+      return {
+        configured: false,
+        message: 'Google Cloud OAuth Client ID & Secret must be configured in settings to link your real Google account.',
+      };
     }
 
-    const oauth2Client = this.getOAuth2Client();
+    const oauth2Client = await this.getOAuth2Client();
     const scopes = [
       'https://www.googleapis.com/auth/calendar.events',
       'https://www.googleapis.com/auth/userinfo.email',
     ];
 
-    return oauth2Client.generateAuthUrl({
+    const url = oauth2Client.generateAuthUrl({
       access_type: 'offline',
       prompt: 'consent',
       scope: scopes,
       state: userId,
     });
+
+    return { url, configured: true };
   }
 
   // 2. Handle OAuth Callback and Save Tokens
   static async handleCallback(code: string, userId: string): Promise<{ email: string }> {
     const db = await getDatabase();
+    const creds = await this.getEffectiveCredentials();
 
-    // Check for demo/mock connect mode
-    if (!config.googleClientId || code === 'mock_demo_code') {
-      const email = 'user.calendar@gmail.com';
-      await db.query(`DELETE FROM google_calendar_tokens WHERE user_id = $1`, [userId]);
-      await db.query(
-        `INSERT INTO google_calendar_tokens (id, user_id, email, access_token, refresh_token, token_type, sync_enabled)
-         VALUES ($1, $2, $3, 'demo_access_token', 'demo_refresh_token', 'Bearer', 1)`,
-        [uuidv4(), userId, email]
-      );
-      return { email };
+    if (!creds.clientId || !creds.clientSecret) {
+      throw new Error('Google OAuth credentials not configured on server.');
     }
 
-    const oauth2Client = this.getOAuth2Client();
+    const oauth2Client = await this.getOAuth2Client();
     const { tokens } = await oauth2Client.getToken(code);
     oauth2Client.setCredentials(tokens);
 
-    // Get user email
+    // Fetch user's real verified Gmail address from Google API
     const oauth2 = google.oauth2({ version: 'v2', auth: oauth2Client });
     const userInfo = await oauth2.userinfo.get();
-    const email = userInfo.data.email || 'connected@gmail.com';
+    const email = userInfo.data.email || 'connected.google.user@gmail.com';
 
     await db.query(`DELETE FROM google_calendar_tokens WHERE user_id = $1`, [userId]);
     await db.query(
@@ -142,8 +194,10 @@ export class GoogleCalendarService {
     );
     const existingEventId = remRes.rows[0]?.google_calendar_event_id;
 
+    const creds = await this.getEffectiveCredentials();
+
     // Check if running in mock/offline mode without client credentials
-    if (!config.googleClientId || tokenData.access_token === 'demo_access_token') {
+    if (!creds.clientId || tokenData.access_token === 'demo_access_token') {
       const generatedEventId = existingEventId || `gcal_${uuidv4().replace(/-/g, '').slice(0, 16)}`;
       await db.query(
         `UPDATE reminders SET google_calendar_event_id = $1, calendar_sync_status = 'SYNCED', channel = 'GOOGLE_CALENDAR', updated_at = CURRENT_TIMESTAMP WHERE id = $2`,
@@ -153,7 +207,7 @@ export class GoogleCalendarService {
     }
 
     try {
-      const oauth2Client = this.getOAuth2Client();
+      const oauth2Client = await this.getOAuth2Client();
       oauth2Client.setCredentials({
         access_token: tokenData.access_token,
         refresh_token: tokenData.refresh_token,
@@ -228,9 +282,10 @@ export class GoogleCalendarService {
       [userId]
     );
 
-    if (tokenRes.rows.length > 0 && config.googleClientId && tokenRes.rows[0].access_token !== 'demo_access_token') {
+    const creds = await this.getEffectiveCredentials();
+    if (tokenRes.rows.length > 0 && creds.clientId && tokenRes.rows[0].access_token !== 'demo_access_token') {
       try {
-        const oauth2Client = this.getOAuth2Client();
+        const oauth2Client = await this.getOAuth2Client();
         oauth2Client.setCredentials({
           access_token: tokenRes.rows[0].access_token,
           refresh_token: tokenRes.rows[0].refresh_token,
@@ -282,5 +337,68 @@ export class GoogleCalendarService {
     }
 
     return { syncedCount, errors };
+  }
+
+  // 8. Generate 1-Click Direct Google Calendar Web Intent URL
+  static generateWebIntentUrl(event: { summary: string; description?: string; date: string }): string {
+    const start = event.date.replace(/-/g, '');
+    const dateObj = new Date(event.date);
+    dateObj.setDate(dateObj.getDate() + 1);
+    const end = dateObj.toISOString().slice(0, 10).replace(/-/g, '');
+
+    const params = new URLSearchParams({
+      action: 'TEMPLATE',
+      text: event.summary,
+      dates: `${start}/${end}`,
+      details: event.description || 'Synced from LifeAdmin Platform',
+    });
+
+    return `https://calendar.google.com/calendar/render?${params.toString()}`;
+  }
+
+  // 9. Generate standard RFC 5545 iCalendar (.ics) file for all active reminders
+  static async generateIcsFeed(userId: string): Promise<string> {
+    const db = await getDatabase();
+    const rows = await db.query(
+      `SELECT a.title, a.due_date, a.description, d.title as doc_title, c.name as category_name
+       FROM actions a
+       JOIN documents d ON a.document_id = d.id
+       LEFT JOIN categories c ON d.category_id = c.id
+       WHERE d.user_id = $1 AND a.status != 'COMPLETED'`,
+      [userId]
+    );
+
+    const nowIso = new Date().toISOString().replace(/[-:]/g, '').slice(0, 15) + 'Z';
+    const lines = [
+      'BEGIN:VCALENDAR',
+      'VERSION:2.0',
+      'PRODID:-//LifeAdmin//Personal Document Intelligence//EN',
+      'CALSCALE:GREGORIAN',
+      'METHOD:PUBLISH',
+      'X-WR-CALNAME:LifeAdmin Deadlines',
+    ];
+
+    for (const r of rows.rows) {
+      if (!r.due_date) continue;
+      const cleanDate = r.due_date.replace(/-/g, '');
+      const uid = `lifeadmin-${uuidv4()}`;
+      lines.push(
+        'BEGIN:VEVENT',
+        `UID:${uid}`,
+        `DTSTAMP:${nowIso}`,
+        `DTSTART;VALUE=DATE:${cleanDate}`,
+        `SUMMARY:[LifeAdmin] ${r.title}`,
+        `DESCRIPTION:${(r.description || '').replace(/\n/g, '\\n')}\\nDocument: ${r.doc_title || ''}\\nCategory: ${r.category_name || ''}`,
+        'BEGIN:VALARM',
+        'TRIGGER:-P1D',
+        'ACTION:DISPLAY',
+        `DESCRIPTION:Reminder: ${r.title}`,
+        'END:VALARM',
+        'END:VEVENT'
+      );
+    }
+
+    lines.push('END:VCALENDAR');
+    return lines.join('\r\n');
   }
 }

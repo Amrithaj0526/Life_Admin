@@ -8,8 +8,38 @@ export const calendarController = {
   async getConnectUrl(req: Request, res: Response) {
     try {
       const userId = req.user!.id;
-      const url = GoogleCalendarService.getAuthUrl(userId);
-      return res.json({ url });
+      const result = await GoogleCalendarService.getAuthUrl(userId);
+      if (!result.configured) {
+        return res.status(400).json({
+          configured: false,
+          error: result.message || 'Google OAuth credentials not configured.',
+        });
+      }
+      return res.json({ url: result.url, configured: true });
+    } catch (err: any) {
+      return res.status(500).json({ error: err.message });
+    }
+  },
+
+  // 1b. Get OAuth Credentials Status
+  async getConfig(_req: Request, res: Response) {
+    try {
+      const status = await GoogleCalendarService.getCredentialsStatus();
+      return res.json(status);
+    } catch (err: any) {
+      return res.status(500).json({ error: err.message });
+    }
+  },
+
+  // 1c. Save OAuth Credentials
+  async saveConfig(req: Request, res: Response) {
+    try {
+      const { clientId, clientSecret } = req.body;
+      if (!clientId || !clientSecret) {
+        return res.status(400).json({ error: 'Both Google Client ID and Client Secret are required.' });
+      }
+      await GoogleCalendarService.saveCredentials(clientId, clientSecret);
+      return res.json({ message: 'Google Cloud OAuth credentials saved successfully.' });
     } catch (err: any) {
       return res.status(500).json({ error: err.message });
     }
@@ -123,4 +153,51 @@ export const calendarController = {
       return res.status(500).json({ error: err.message });
     }
   },
+
+  // 8. Get Direct 1-Click Google Calendar Web Intent URL
+  async getWebIntent(req: Request, res: Response) {
+    try {
+      const { actionId } = req.params;
+      const userId = req.user!.id;
+      const db = await getDatabase();
+
+      const queryRes = await db.query(
+        `SELECT a.title, a.due_date, a.description, d.title as doc_title, c.name as category_name
+         FROM actions a
+         JOIN documents d ON a.document_id = d.id
+         LEFT JOIN categories c ON d.category_id = c.id
+         WHERE a.id = $1 AND d.user_id = $2`,
+        [actionId, userId]
+      );
+
+      if (queryRes.rows.length === 0) {
+        return res.status(404).json({ error: 'Action item not found.' });
+      }
+
+      const row = queryRes.rows[0];
+      const webUrl = GoogleCalendarService.generateWebIntentUrl({
+        summary: `[LifeAdmin] ${row.title}`,
+        description: `LifeAdmin Deadline Alert\n\nDocument: ${row.doc_title}\nCategory: ${row.category_name || 'General'}\nDetails: ${row.description || 'Important life deadline'}\nDue Date: ${row.due_date}`,
+        date: row.due_date,
+      });
+
+      return res.json({ url: webUrl });
+    } catch (err: any) {
+      return res.status(500).json({ error: err.message });
+    }
+  },
+
+  // 9. Export iCalendar (.ics) feed for mobile and desktop calendar clients
+  async exportIcs(req: Request, res: Response) {
+    try {
+      const userId = req.user!.id;
+      const icsData = await GoogleCalendarService.generateIcsFeed(userId);
+      res.setHeader('Content-Type', 'text/calendar; charset=utf-8');
+      res.setHeader('Content-Disposition', 'attachment; filename="lifeadmin-deadlines.ics"');
+      return res.send(icsData);
+    } catch (err: any) {
+      return res.status(500).json({ error: err.message });
+    }
+  },
 };
+

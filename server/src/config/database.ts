@@ -39,6 +39,9 @@ class SQLiteDatabaseClient implements IDatabaseClient {
       try {
         this.db.exec(`ALTER TABLE reminders ADD COLUMN updated_at TEXT;`);
       } catch {}
+      try {
+        this.db.exec(`CREATE TABLE IF NOT EXISTS system_settings (key TEXT PRIMARY KEY, value TEXT NOT NULL, updated_at TEXT DEFAULT (datetime('now')));`);
+      } catch {}
       this.seedDefaultCategories();
     }
   }
