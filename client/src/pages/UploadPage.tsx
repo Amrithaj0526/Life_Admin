@@ -1,14 +1,45 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { UploadCloud, AlertCircle, FileText, ArrowRight } from 'lucide-react';
+import {
+  UploadCloud,
+  FileText,
+  AlertCircle,
+  X,
+  FileCheck
+} from 'lucide-react';
 import { api } from '../services/api';
+import { Button } from '../components/ui/button';
+import { Card, CardContent } from '../components/ui/card';
+import { useToast } from '../context/ToastContext';
 
 export const UploadPage: React.FC = () => {
   const [file, setFile] = useState<File | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
   const [uploading, setUploading] = useState(false);
-  const [step, setStep] = useState<'idle' | 'uploading' | 'ocr' | 'ai' | 'done'>('idle');
+  const [progress, setProgress] = useState(0);
+  const [statusText, setStatusText] = useState('');
   const [error, setError] = useState('');
   const navigate = useNavigate();
+  const { toast } = useToast();
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      setFile(e.dataTransfer.files[0]);
+      setError('');
+    }
+  };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -22,7 +53,8 @@ export const UploadPage: React.FC = () => {
     if (!file) return;
 
     setUploading(true);
-    setStep('uploading');
+    setProgress(15);
+    setStatusText('Uploading document to secure encrypted vault...');
     setError('');
 
     const formData = new FormData();
@@ -33,124 +65,161 @@ export const UploadPage: React.FC = () => {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
 
-      const id = res.data.id;
+      const docId = res.data.id;
 
-      // Simulate step progression for intuitive UI feedback
-      setStep('ocr');
-      await new Promise((r) => setTimeout(r, 1200));
+      setProgress(45);
+      setStatusText('Extracting text & running OCR analysis...');
+      await new Promise((r) => setTimeout(r, 900));
 
-      setStep('ai');
-      await new Promise((r) => setTimeout(r, 1500));
+      setProgress(85);
+      setStatusText('AI analyzing dates, providers, and consequence scores...');
+      await new Promise((r) => setTimeout(r, 1100));
 
-      setStep('done');
+      setProgress(100);
+      setStatusText('Upload & AI analysis complete!');
+      toast.success('Document uploaded and analyzed successfully.');
+
       setTimeout(() => {
-        navigate(`/documents/${id}`);
-      }, 1000);
+        navigate(`/documents/${docId}`);
+      }, 700);
     } catch (err: any) {
-      setError(err.response?.data?.error || 'Upload and processing failed.');
-      setStep('idle');
-    } finally {
+      const msg = err.response?.data?.error || 'Unable to upload document.';
+      setError(msg);
+      toast.error(msg);
       setUploading(false);
+      setProgress(0);
     }
   };
 
   return (
     <div className="max-w-2xl mx-auto space-y-6">
       <div>
-        <h2 className="text-2xl font-black text-slate-800">Upload & Analyze Document</h2>
-        <p className="text-sm text-slate-500 mt-1">
-          Upload insurance policies, bills, warranties, or certificates. Our pipeline will extract
-          text, detect deadlines, and calculate priorities.
+        <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white tracking-tight">
+          Upload Document
+        </h2>
+        <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
+          Upload insurance policies, utility bills, warranties, or certificates for automated deadline tracking.
         </p>
       </div>
 
       {error && (
-        <div className="p-4 bg-rose-50 border border-rose-200 text-rose-700 text-sm rounded-xl flex items-center space-x-2">
-          <AlertCircle className="w-5 h-5 shrink-0" />
+        <div className="p-4 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900 text-rose-700 dark:text-rose-300 text-xs font-semibold rounded-xl flex items-center space-x-2">
+          <AlertCircle className="w-4 h-4 shrink-0" />
           <span>{error}</span>
         </div>
       )}
 
-      <div className="bg-white rounded-2xl border border-slate-200 p-8 shadow-sm">
-        <form onSubmit={handleUpload} className="space-y-6">
-          <div className="border-2 border-dashed border-slate-200 rounded-2xl p-8 text-center hover:border-emerald-500 transition cursor-pointer relative">
-            <input
-              type="file"
-              accept=".pdf,.png,.jpg,.jpeg"
-              onChange={handleFileChange}
-              className="absolute inset-0 opacity-0 cursor-pointer"
-            />
-            <div className="flex flex-col items-center">
-              <div className="w-14 h-14 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center mb-3">
-                <UploadCloud className="w-8 h-8" />
-              </div>
-              <p className="text-sm font-bold text-slate-700">
-                {file ? file.name : 'Click or drag document to upload'}
-              </p>
-              <p className="text-xs text-slate-400 mt-1">PDF, JPG, or PNG up to 10MB</p>
-            </div>
-          </div>
+      <Card>
+        <CardContent className="p-6 sm:p-8 space-y-6">
+          <form onSubmit={handleUpload} className="space-y-6">
+            {/* Drag & Drop Zone */}
+            <div
+              onDragOver={handleDragOver}
+              onDragLeave={handleDragLeave}
+              onDrop={handleDrop}
+              className={`border-2 border-dashed rounded-2xl p-8 sm:p-12 text-center transition-all relative ${
+                isDragging
+                  ? 'border-primary-500 bg-primary-50/40 dark:bg-primary-950/30 scale-[1.01]'
+                  : 'border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 bg-slate-50/40 dark:bg-slate-900/40'
+              }`}
+            >
+              <input
+                type="file"
+                accept=".pdf,.png,.jpg,.jpeg"
+                onChange={handleFileChange}
+                disabled={uploading}
+                className="absolute inset-0 opacity-0 cursor-pointer disabled:cursor-not-allowed"
+              />
 
-          {file && (
-            <div className="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-200 text-xs">
-              <div className="flex items-center space-x-2">
-                <FileText className="w-4 h-4 text-slate-500" />
-                <span className="font-semibold text-slate-700">{file.name}</span>
-                <span className="text-slate-400">({(file.size / 1024).toFixed(1)} KB)</span>
-              </div>
-              <span className="text-emerald-600 font-bold">Ready</span>
-            </div>
-          )}
-
-          {uploading && (
-            <div className="space-y-3 bg-slate-50 p-4 rounded-xl border border-slate-200 text-xs">
-              <div className="flex items-center space-x-2">
-                <div
-                  className={`w-3 h-3 rounded-full ${
-                    step === 'uploading' ? 'bg-amber-500 animate-ping' : 'bg-emerald-500'
-                  }`}
-                />
-                <span className="font-semibold text-slate-700">1. Uploading file securely...</span>
-              </div>
-              <div className="flex items-center space-x-2">
-                <div
-                  className={`w-3 h-3 rounded-full ${
-                    step === 'ocr'
-                      ? 'bg-amber-500 animate-ping'
-                      : ['ai', 'done'].includes(step)
-                      ? 'bg-emerald-500'
-                      : 'bg-slate-300'
-                  }`}
-                />
-                <span className="font-semibold text-slate-700">2. OCR & Raw Text Extraction...</span>
-              </div>
-              <div className="flex items-center space-x-2">
-                <div
-                  className={`w-3 h-3 rounded-full ${
-                    step === 'ai'
-                      ? 'bg-amber-500 animate-ping'
-                      : step === 'done'
-                      ? 'bg-emerald-500'
-                      : 'bg-slate-300'
-                  }`}
-                />
-                <span className="font-semibold text-slate-700">
-                  3. AI Analyzing fields, deadlines & priority...
+              <div className="flex flex-col items-center space-y-3">
+                <div className="w-12 h-12 rounded-xl bg-primary-50 dark:bg-primary-950/60 text-primary-600 dark:text-primary-300 flex items-center justify-center">
+                  <UploadCloud className="w-6 h-6" />
+                </div>
+                <div>
+                  <h4 className="text-sm font-bold text-slate-800 dark:text-white">
+                    Upload your document
+                  </h4>
+                  <p className="text-xs text-slate-400 mt-0.5">
+                    Drag & drop here or browse files
+                  </p>
+                </div>
+                <div className="pt-1">
+                  <span className="inline-block px-3 py-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-semibold text-slate-700 dark:text-slate-300 shadow-sm">
+                    Browse Files
+                  </span>
+                </div>
+                <span className="text-[11px] text-slate-400">
+                  PDF, DOCX, JPG, PNG up to 10 MB
                 </span>
               </div>
             </div>
-          )}
 
-          <button
-            type="submit"
-            disabled={!file || uploading}
-            className="w-full bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white font-bold py-3 rounded-xl flex items-center justify-center space-x-2 transition shadow-md shadow-emerald-600/20"
-          >
-            <span>{uploading ? 'Processing Pipeline Active...' : 'Upload & Start Intelligence Engine'}</span>
-            <ArrowRight className="w-4 h-4" />
-          </button>
-        </form>
-      </div>
+            {/* Selected File Card */}
+            {file && (
+              <div className="p-3.5 bg-slate-50 dark:bg-slate-800/80 rounded-xl border border-slate-200 dark:border-slate-700 flex items-center justify-between text-xs">
+                <div className="flex items-center space-x-2.5 min-w-0">
+                  <FileText className="w-4 h-4 text-primary-600 shrink-0" />
+                  <span className="font-semibold text-slate-800 dark:text-white truncate">
+                    {file.name}
+                  </span>
+                  <span className="text-slate-400 text-[11px] shrink-0">
+                    ({(file.size / 1024).toFixed(0)} KB)
+                  </span>
+                </div>
+
+                {!uploading && (
+                  <button
+                    type="button"
+                    onClick={() => setFile(null)}
+                    className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                )}
+              </div>
+            )}
+
+            {/* Upload Progress Bar */}
+            {uploading && (
+              <div className="space-y-2 pt-1 animate-in fade-in">
+                <div className="flex items-center justify-between text-xs font-medium text-slate-600 dark:text-slate-300">
+                  <span>{statusText}</span>
+                  <span className="font-bold">{progress}%</span>
+                </div>
+                <div className="w-full h-2 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-primary-600 rounded-full transition-all duration-300 ease-out"
+                    style={{ width: `${progress}%` }}
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* Submit Action */}
+            <div className="flex items-center justify-end space-x-3 pt-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="md"
+                disabled={uploading}
+                onClick={() => navigate('/documents')}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                variant="primary"
+                size="md"
+                disabled={!file || uploading}
+                isLoading={uploading}
+              >
+                <FileCheck className="w-4 h-4" />
+                <span>Upload & Extract</span>
+              </Button>
+            </div>
+          </form>
+        </CardContent>
+      </Card>
     </div>
   );
 };

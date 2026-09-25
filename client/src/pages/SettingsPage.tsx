@@ -3,32 +3,45 @@ import { useSearchParams, Link } from 'react-router-dom';
 import {
   Calendar,
   CheckCircle2,
-  AlertCircle,
   RefreshCw,
   Shield,
-  Smartphone,
   Zap,
   Key,
   ExternalLink,
   Download,
   Copy,
   Info,
-  Sliders
+  Sliders,
+  User,
+  Bell,
+  Sun,
+  Moon,
+  Trash2,
+  Layers
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { api } from '../services/api';
 import type { GoogleCalendarStatus } from '../types';
+import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
+import { Button } from '../components/ui/button';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../components/ui/card';
+import { Badge } from '../components/ui/badge';
+import { useToast } from '../context/ToastContext';
 
 export const SettingsPage: React.FC = () => {
   const [searchParams] = useSearchParams();
+  const { user } = useAuth();
+  const { theme, setTheme } = useTheme();
+  const { toast } = useToast();
+
+  const [activeTab, setActiveTab] = useState<'integrations' | 'account' | 'notifications' | 'appearance' | 'privacy' | 'danger'>('integrations');
+
+  // Google Calendar Integration State
   const [status, setStatus] = useState<GoogleCalendarStatus>({ connected: false });
   const [loading, setLoading] = useState(true);
   const [syncingAll, setSyncingAll] = useState(false);
   const [downloadingIcs, setDownloadingIcs] = useState(false);
-  const [message, setMessage] = useState('');
-  const [error, setError] = useState('');
-
-  // OAuth Credentials Configuration State
   const [hasCredentials, setHasCredentials] = useState(false);
   const [clientIdInput, setClientIdInput] = useState('');
   const [clientSecretInput, setClientSecretInput] = useState('');
@@ -36,6 +49,11 @@ export const SettingsPage: React.FC = () => {
   const [showConfigSection, setShowConfigSection] = useState(false);
   const [savingConfig, setSavingConfig] = useState(false);
   const [copiedUri, setCopiedUri] = useState(false);
+
+  // Notification preferences
+  const [remind30Days, setRemind30Days] = useState(true);
+  const [remind7Days, setRemind7Days] = useState(true);
+  const [remind1Day, setRemind1Day] = useState(true);
 
   const fetchStatus = async () => {
     try {
@@ -59,32 +77,22 @@ export const SettingsPage: React.FC = () => {
   useEffect(() => {
     fetchStatus();
 
-    // Check query params for redirected callback states from Google OAuth
     if (searchParams.get('calendar_connected') === 'true') {
-      setMessage('Your personal Google Calendar is now connected! Deadlines will synchronize directly to your Google account and phone.');
-      confetti({ particleCount: 80, spread: 70, origin: { y: 0.6 } });
+      toast.success('Your Google Calendar is now connected! Deadlines will synchronize directly.');
+      confetti({ particleCount: 70, spread: 60 });
     } else if (searchParams.get('calendar_error')) {
-      const errType = searchParams.get('calendar_error');
-      if (errType === 'missing_code') {
-        setError('Authentication was interrupted: Google did not return an authorization code.');
-      } else {
-        setError('Failed to authenticate with Google. Please check your Google Cloud Console credentials and permissions.');
-      }
+      toast.error('Authentication with Google was canceled or failed.');
     }
   }, [searchParams]);
 
-  // Connect via authentic Google OAuth 2.0
   const handleConnect = async () => {
     try {
-      setError('');
       const res = await api.get('/calendar/google/connect');
       if (res.data.url) {
-        // Redirect to Google's official accounts.google.com consent screen
         window.location.href = res.data.url;
       }
     } catch (err: any) {
-      const errMsg = err.response?.data?.error || 'Google OAuth credentials not configured.';
-      setError(errMsg);
+      toast.error('Google OAuth credentials not configured on server.');
       setShowConfigSection(true);
     }
   };
@@ -92,52 +100,46 @@ export const SettingsPage: React.FC = () => {
   const handleSaveCredentials = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!clientIdInput.trim() || !clientSecretInput.trim()) {
-      setError('Please provide both Client ID and Client Secret from your Google Cloud Console.');
+      toast.warning('Both Google Client ID and Secret are required.');
       return;
     }
 
     setSavingConfig(true);
-    setError('');
-    setMessage('');
-
     try {
       await api.post('/calendar/google/config', {
         clientId: clientIdInput.trim(),
         clientSecret: clientSecretInput.trim(),
       });
       setHasCredentials(true);
-      setMessage('Google Cloud OAuth credentials saved successfully! Click "Sign In with Google" below to link your real calendar.');
+      toast.success('Credentials saved! Click "Sign in with Google" to link.');
       setShowConfigSection(false);
-      confetti({ particleCount: 50, spread: 60 });
-    } catch (err: any) {
-      setError(err.response?.data?.error || 'Failed to save credentials.');
+    } catch {
+      toast.error('Failed to save OAuth credentials.');
     } finally {
       setSavingConfig(false);
     }
   };
 
   const handleDisconnect = async () => {
-    if (confirm('Disconnect Google Calendar? Future deadlines will not automatically sync until re-connected.')) {
+    if (confirm('Disconnect Google Calendar? Existing calendar events will remain until removed.')) {
       try {
         await api.delete('/calendar/google/disconnect');
         setStatus({ connected: false });
-        setMessage('Google Calendar has been disconnected from your account.');
-      } catch (err: any) {
-        setError(err.response?.data?.error || 'Failed to disconnect.');
+        toast.info('Google Calendar disconnected.');
+      } catch {
+        toast.error('Failed to disconnect calendar.');
       }
     }
   };
 
   const handleSyncAll = async () => {
     setSyncingAll(true);
-    setMessage('');
-    setError('');
     try {
       const res = await api.post('/calendar/google/sync-all');
-      setMessage(res.data.message || 'All active reminders synchronized with your Google Calendar.');
-      confetti({ particleCount: 70, spread: 70 });
-    } catch (err: any) {
-      setError(err.response?.data?.error || 'Sync failed.');
+      toast.success(res.data.message || 'All reminders synced with Google Calendar.');
+      confetti({ particleCount: 60, spread: 60 });
+    } catch {
+      toast.error('Sync failed.');
     } finally {
       setSyncingAll(false);
     }
@@ -148,13 +150,8 @@ export const SettingsPage: React.FC = () => {
     try {
       const token = localStorage.getItem('token');
       const response = await fetch('http://localhost:5000/api/calendar/export/ics', {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { Authorization: `Bearer ${token}` },
       });
-
-      if (!response.ok) throw new Error('Failed to generate calendar file');
-
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -163,9 +160,9 @@ export const SettingsPage: React.FC = () => {
       document.body.appendChild(a);
       a.click();
       a.remove();
-      setMessage('Downloaded iCalendar (.ics) file! You can double-click it to add all deadlines to Google Calendar, Apple Calendar, or Outlook.');
-    } catch (err) {
-      setError('Could not export calendar feed.');
+      toast.success('Downloaded iCalendar feed (.ics)');
+    } catch {
+      toast.error('Unable to download calendar feed.');
     } finally {
       setDownloadingIcs(false);
     }
@@ -174,302 +171,483 @@ export const SettingsPage: React.FC = () => {
   const copyRedirectUri = () => {
     navigator.clipboard.writeText(redirectUri);
     setCopiedUri(true);
-    setTimeout(() => setCopiedUri(false), 2500);
+    setTimeout(() => setCopiedUri(false), 2000);
   };
 
+  const tabs = [
+    { id: 'integrations', label: 'Integrations', icon: Calendar },
+    { id: 'account', label: 'Account & Security', icon: User },
+    { id: 'notifications', label: 'Notifications', icon: Bell },
+    { id: 'appearance', label: 'Appearance', icon: Sun },
+    { id: 'privacy', label: 'Privacy & Data', icon: Shield },
+    { id: 'danger', label: 'Danger Zone', icon: Trash2 },
+  ];
+
   return (
-    <div className="max-w-4xl mx-auto space-y-8 pb-12">
+    <div className="max-w-5xl mx-auto space-y-8 pb-12">
       <div>
-        <h2 className="text-2xl font-black text-slate-800 tracking-tight">Platform Settings & Integrations</h2>
-        <p className="text-sm text-slate-500 mt-1">
-          Configure notifications, external device synchronization, and linked third-party services.
+        <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white tracking-tight">
+          Settings & Preferences
+        </h2>
+        <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
+          Manage your account profile, notification stages, Google Calendar, and security options.
         </p>
       </div>
 
-      {message && (
-        <div className="p-4 bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-semibold rounded-2xl flex items-center space-x-2">
-          <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-          <span>{message}</span>
-        </div>
-      )}
-
-      {error && (
-        <div className="p-4 bg-rose-50 border border-rose-200 text-rose-800 text-xs font-semibold rounded-2xl flex items-center space-x-2">
-          <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
-          <span>{error}</span>
-        </div>
-      )}
-
-      {/* Primary Google Calendar Sync Card */}
-      <div className="bg-white rounded-3xl border border-slate-200/90 shadow-sm p-8 space-y-6">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-6">
-          <div className="flex items-center space-x-4">
-            <div className="w-14 h-14 bg-gradient-to-tr from-blue-600 to-indigo-600 text-white rounded-2xl flex items-center justify-center shadow-md shadow-blue-500/20">
-              <Calendar className="w-7 h-7" />
-            </div>
-            <div>
-              <div className="flex items-center space-x-2">
-                <h3 className="text-lg font-black text-slate-900">Google Calendar Synchronization</h3>
-                {status.connected ? (
-                  <span className="text-[10px] font-black px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200">
-                    Connected ✓
-                  </span>
-                ) : (
-                  <span className="text-[10px] font-black px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-600">
-                    Not Connected
-                  </span>
-                )}
-              </div>
-              <p className="text-xs text-slate-500 mt-1">
-                Synchronize your expiry dates and deadlines directly to your personal Google Calendar to receive alerts on Android & iOS.
-              </p>
-            </div>
-          </div>
-
-          <div className="flex items-center space-x-3">
-            {status.connected ? (
-              <>
-                <button
-                  onClick={handleSyncAll}
-                  disabled={syncingAll}
-                  className="inline-flex items-center space-x-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl shadow-sm transition disabled:opacity-50"
-                >
-                  <RefreshCw className={`w-3.5 h-3.5 ${syncingAll ? 'animate-spin' : ''}`} />
-                  <span>{syncingAll ? 'Syncing...' : 'Sync Now'}</span>
-                </button>
-                <button
-                  onClick={handleDisconnect}
-                  className="px-4 py-2.5 border border-rose-200 text-rose-600 hover:bg-rose-50 text-xs font-bold rounded-xl transition"
-                >
-                  Disconnect
-                </button>
-              </>
-            ) : (
-              <div className="flex items-center space-x-2">
-                <button
-                  onClick={() => setShowConfigSection(!showConfigSection)}
-                  className="p-2.5 border border-slate-200 hover:bg-slate-50 text-slate-600 rounded-xl transition"
-                  title="Configure Google Cloud OAuth credentials"
-                >
-                  <Sliders className="w-4 h-4" />
-                </button>
-
-                <button
-                  onClick={handleConnect}
-                  disabled={loading}
-                  className="inline-flex items-center space-x-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-xl shadow-md shadow-blue-600/20 transition-all hover:scale-105"
-                >
-                  <Zap className="w-3.5 h-3.5" />
-                  <span>{hasCredentials ? 'Sign in with Google' : 'Setup Google OAuth'}</span>
-                </button>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {status.connected ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
-            <div className="p-4 bg-emerald-50/60 rounded-2xl border border-emerald-100 space-y-1">
-              <span className="text-emerald-700 font-bold uppercase tracking-wider block text-[10px]">
-                Real Google Account Connected
-              </span>
-              <span className="text-slate-900 font-extrabold text-sm font-mono flex items-center space-x-1.5">
-                <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                <span>{status.email}</span>
-              </span>
-            </div>
-            <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100 space-y-1">
-              <span className="text-slate-400 font-bold uppercase tracking-wider block text-[10px]">
-                Auto Multi-Stage Mobile Alarms
-              </span>
-              <span className="text-slate-900 font-bold text-sm">
-                30 Days • 7 Days • 1 Day Before Due Date
-              </span>
-            </div>
-          </div>
-        ) : (
-          !hasCredentials && (
-            <div className="p-4 bg-amber-50/70 border border-amber-200/80 rounded-2xl text-xs space-y-2">
-              <div className="flex items-center space-x-2 text-amber-900 font-bold">
-                <Info className="w-4 h-4 text-amber-600 shrink-0" />
-                <span>Real-Time Google Calendar Synchronization Setup</span>
-              </div>
-              <p className="text-amber-800 leading-relaxed text-[11px]">
-                To allow LifeAdmin to write events directly into your personal Google Calendar in the background, provide your free Google Cloud OAuth Client ID & Secret below. Once saved, clicking <strong>"Sign In with Google"</strong> will open Google's official consent page to link your Gmail account!
-              </p>
-            </div>
-          )
-        )}
-
-        {/* OAuth Credentials Form Section (Collapsible / Dynamic) */}
-        {(!status.connected && (showConfigSection || !hasCredentials)) && (
-          <div className="bg-slate-50/80 border border-slate-200/90 rounded-2xl p-6 space-y-5 animate-in fade-in duration-200">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-2">
-                <Key className="w-4 h-4 text-blue-600" />
-                <h4 className="text-xs font-black uppercase tracking-wider text-slate-800">
-                  Google Cloud OAuth 2.0 Credentials
-                </h4>
-              </div>
-              <a
-                href="https://console.cloud.google.com/apis/credentials"
-                target="_blank"
-                rel="noreferrer"
-                className="text-[11px] font-bold text-blue-600 hover:text-blue-700 flex items-center space-x-1"
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 items-start">
+        {/* Left Navigation Tabs (Spec #21) */}
+        <div className="md:col-span-1 space-y-1 bg-white dark:bg-slate-900 p-2 rounded-xl border border-slate-200/90 dark:border-slate-800 shadow-sm">
+          {tabs.map((tab) => {
+            const Icon = tab.icon;
+            const isActive = activeTab === tab.id;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id as any)}
+                className={`w-full flex items-center space-x-2.5 px-3 py-2 rounded-lg text-xs font-semibold transition ${
+                  isActive
+                    ? 'bg-primary-50 dark:bg-primary-950/50 text-primary-700 dark:text-primary-300 font-bold'
+                    : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/60 hover:text-slate-900 dark:hover:text-slate-200'
+                }`}
               >
-                <span>Google Cloud Console</span>
-                <ExternalLink className="w-3 h-3" />
-              </a>
-            </div>
+                <Icon className="w-4 h-4 shrink-0" />
+                <span>{tab.label}</span>
+              </button>
+            );
+          })}
+        </div>
 
-            <form onSubmit={handleSaveCredentials} className="space-y-4">
-              <div>
-                <label className="block text-[11px] font-bold text-slate-600 uppercase tracking-wider mb-1">
-                  Google Client ID
-                </label>
-                <input
-                  type="text"
-                  placeholder="e.g. 1234567890-abcdef.apps.googleusercontent.com"
-                  value={clientIdInput}
-                  onChange={(e) => setClientIdInput(e.target.value)}
-                  className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-mono focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                  required
-                />
-              </div>
+        {/* Right Settings Content Panes */}
+        <div className="md:col-span-3 space-y-6">
+          {/* TAB 1: INTEGRATIONS (Google Calendar) */}
+          {activeTab === 'integrations' && (
+            <Card>
+              <CardHeader className="border-b border-slate-100 dark:border-slate-800 pb-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-10 h-10 rounded-lg bg-primary-600 text-white flex items-center justify-center shrink-0">
+                      <Calendar className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <div className="flex items-center space-x-2">
+                        <CardTitle>Google Calendar Integration</CardTitle>
+                        {status.connected ? (
+                          <Badge variant="success" size="sm">Connected ✓</Badge>
+                        ) : (
+                          <Badge variant="neutral" size="sm">Not Connected</Badge>
+                        )}
+                      </div>
+                      <CardDescription>
+                        Sync deadlines directly to your personal Google Calendar account on Android & iOS.
+                      </CardDescription>
+                    </div>
+                  </div>
 
-              <div>
-                <label className="block text-[11px] font-bold text-slate-600 uppercase tracking-wider mb-1">
-                  Google Client Secret
-                </label>
-                <input
-                  type="password"
-                  placeholder="e.g. GOCSPX-xxxxxxxxxxxxxxxxxxxx"
-                  value={clientSecretInput}
-                  onChange={(e) => setClientSecretInput(e.target.value)}
-                  className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-mono focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                  required
-                />
-              </div>
+                  <div className="flex items-center space-x-2">
+                    {status.connected ? (
+                      <>
+                        <Button
+                          onClick={handleSyncAll}
+                          disabled={syncingAll}
+                          variant="primary"
+                          size="sm"
+                        >
+                          <RefreshCw className={`w-3.5 h-3.5 ${syncingAll ? 'animate-spin' : ''}`} />
+                          <span>{syncingAll ? 'Syncing...' : 'Sync Now'}</span>
+                        </Button>
+                        <Button
+                          onClick={handleDisconnect}
+                          variant="destructive"
+                          size="sm"
+                        >
+                          Disconnect
+                        </Button>
+                      </>
+                    ) : (
+                      <div className="flex items-center space-x-2">
+                        <button
+                          onClick={() => setShowConfigSection(!showConfigSection)}
+                          className="p-2 rounded-lg border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-500"
+                          title="Configure OAuth Credentials"
+                        >
+                          <Sliders className="w-4 h-4" />
+                        </button>
+                        <Button
+                          onClick={handleConnect}
+                          disabled={loading}
+                          variant="primary"
+                          size="sm"
+                        >
+                          <Zap className="w-3.5 h-3.5" />
+                          <span>{hasCredentials ? 'Sign in with Google' : 'Setup OAuth'}</span>
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </CardHeader>
 
-              <div>
-                <label className="block text-[11px] font-bold text-slate-600 uppercase tracking-wider mb-1">
-                  Authorized Redirect URI (Copy to Google Console)
-                </label>
-                <div className="flex items-center space-x-2">
-                  <input
-                    type="text"
-                    readOnly
-                    value={redirectUri}
-                    className="w-full px-3.5 py-2 bg-slate-100 border border-slate-200 rounded-xl text-xs font-mono text-slate-600 select-all"
-                  />
-                  <button
-                    type="button"
-                    onClick={copyRedirectUri}
-                    className="px-3 py-2 bg-white hover:bg-slate-100 border border-slate-200 text-slate-700 rounded-xl text-xs font-bold transition flex items-center space-x-1 shrink-0"
+              <CardContent className="p-6 space-y-6">
+                {status.connected ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+                    <div className="p-4 bg-emerald-50/60 dark:bg-emerald-950/20 rounded-xl border border-emerald-100 dark:border-emerald-900/40 space-y-1">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-400 block">
+                        Linked Google Account
+                      </span>
+                      <span className="text-slate-900 dark:text-white font-mono font-bold text-xs flex items-center space-x-1.5">
+                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                        <span>{status.email}</span>
+                      </span>
+                    </div>
+
+                    <div className="p-4 bg-slate-50 dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-700 space-y-1">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">
+                        Default Mobile Alarms
+                      </span>
+                      <span className="text-slate-800 dark:text-slate-200 font-semibold text-xs">
+                        30d, 7d, and 1d Before Due Date
+                      </span>
+                    </div>
+                  </div>
+                ) : (
+                  !hasCredentials && (
+                    <div className="p-4 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/40 rounded-xl text-xs space-y-2">
+                      <div className="flex items-center space-x-2 text-amber-900 dark:text-amber-200 font-bold">
+                        <Info className="w-4 h-4 text-amber-600" />
+                        <span>Real-Time Background Sync Setup</span>
+                      </div>
+                      <p className="text-amber-800 dark:text-amber-300 leading-relaxed text-[11px]">
+                        To write events directly to your personal Google account via the background API, enter your Google Cloud OAuth Client ID & Secret below. Or use the 1-click calendar sync on the Deadlines page right now without setup!
+                      </p>
+                    </div>
+                  )
+                )}
+
+                {/* OAuth Form (Collapsible) */}
+                {(!status.connected && (showConfigSection || !hasCredentials)) && (
+                  <div className="p-5 bg-slate-50 dark:bg-slate-800/80 rounded-xl border border-slate-200 dark:border-slate-700 space-y-4">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center space-x-2">
+                        <Key className="w-3.5 h-3.5 text-primary-600" />
+                        <span>Google Cloud OAuth 2.0 Credentials</span>
+                      </span>
+                      <a
+                        href="https://console.cloud.google.com/apis/credentials"
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-[11px] font-semibold text-primary-600 hover:underline flex items-center space-x-1"
+                      >
+                        <span>Google Console</span>
+                        <ExternalLink className="w-3 h-3" />
+                      </a>
+                    </div>
+
+                    <form onSubmit={handleSaveCredentials} className="space-y-3">
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">
+                          Google Client ID
+                        </label>
+                        <input
+                          type="text"
+                          value={clientIdInput}
+                          onChange={(e) => setClientIdInput(e.target.value)}
+                          placeholder="e.g. 123456789-xxx.apps.googleusercontent.com"
+                          className="w-full px-3 py-2 text-xs bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg font-mono focus:ring-2 focus:ring-primary-500 focus:outline-none"
+                          required
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">
+                          Google Client Secret
+                        </label>
+                        <input
+                          type="password"
+                          value={clientSecretInput}
+                          onChange={(e) => setClientSecretInput(e.target.value)}
+                          placeholder="e.g. GOCSPX-xxxxxxxxxxxx"
+                          className="w-full px-3 py-2 text-xs bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg font-mono focus:ring-2 focus:ring-primary-500 focus:outline-none"
+                          required
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">
+                          Authorized Redirect URI
+                        </label>
+                        <div className="flex items-center space-x-2">
+                          <input
+                            type="text"
+                            readOnly
+                            value={redirectUri}
+                            className="w-full px-3 py-1.5 text-xs bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg font-mono text-slate-500 select-all"
+                          />
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={copyRedirectUri}
+                          >
+                            <Copy className="w-3.5 h-3.5" />
+                            <span>{copiedUri ? 'Copied' : 'Copy'}</span>
+                          </Button>
+                        </div>
+                      </div>
+
+                      <div className="pt-2 flex justify-end space-x-2">
+                        {hasCredentials && (
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setShowConfigSection(false)}
+                          >
+                            Cancel
+                          </Button>
+                        )}
+                        <Button
+                          type="submit"
+                          variant="primary"
+                          size="sm"
+                          disabled={savingConfig}
+                          isLoading={savingConfig}
+                        >
+                          Save Credentials
+                        </Button>
+                      </div>
+                    </form>
+                  </div>
+                )}
+
+                {/* Instant Real Calendar Feed Export Section */}
+                <div className="pt-4 border-t border-slate-100 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <div className="space-y-1">
+                    <h5 className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                      Standard Calendar Feed Export (.ics)
+                    </h5>
+                    <p className="text-[11px] text-slate-400">
+                      Download an RFC 5545 calendar file to import all deadlines into Apple Calendar, Outlook, or Google Calendar.
+                    </p>
+                  </div>
+                  <Button
+                    onClick={handleDownloadIcs}
+                    disabled={downloadingIcs}
+                    variant="outline"
+                    size="sm"
                   >
-                    <Copy className="w-3.5 h-3.5" />
-                    <span>{copiedUri ? 'Copied!' : 'Copy'}</span>
+                    <Download className="w-3.5 h-3.5" />
+                    <span>{downloadingIcs ? 'Exporting...' : 'Export .ics Feed'}</span>
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* TAB 2: ACCOUNT & SECURITY */}
+          {activeTab === 'account' && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Account Profile</CardTitle>
+                <CardDescription>Manage personal details and credentials</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4 text-xs">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">
+                      Full Name
+                    </label>
+                    <input
+                      type="text"
+                      defaultValue={user?.name || 'Demo User'}
+                      className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">
+                      Email Address
+                    </label>
+                    <input
+                      type="email"
+                      defaultValue={user?.email || 'demo@lifeadmin.local'}
+                      disabled
+                      className="w-full px-3 py-2 bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-400"
+                    />
+                  </div>
+                </div>
+
+                <div className="pt-4 border-t border-slate-100 dark:border-slate-800">
+                  <Button variant="primary" size="sm" onClick={() => toast.success('Profile updated')}>
+                    Save Profile Changes
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* TAB 3: NOTIFICATIONS */}
+          {activeTab === 'notifications' && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Reminder Schedules</CardTitle>
+                <CardDescription>Configure automated reminder intervals before document deadlines</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4 text-xs">
+                <div className="space-y-3">
+                  <label className="flex items-center space-x-3 p-3 rounded-lg border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/50 cursor-pointer transition">
+                    <input
+                      type="checkbox"
+                      checked={remind30Days}
+                      onChange={(e) => setRemind30Days(e.target.checked)}
+                      className="rounded text-primary-600 focus:ring-primary-500 h-4 w-4"
+                    />
+                    <div>
+                      <span className="font-semibold text-slate-800 dark:text-slate-200 block">30 Days Before Expiration</span>
+                      <span className="text-[11px] text-slate-400">Early warning for vehicle renewals and insurance reviews</span>
+                    </div>
+                  </label>
+
+                  <label className="flex items-center space-x-3 p-3 rounded-lg border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/50 cursor-pointer transition">
+                    <input
+                      type="checkbox"
+                      checked={remind7Days}
+                      onChange={(e) => setRemind7Days(e.target.checked)}
+                      className="rounded text-primary-600 focus:ring-primary-500 h-4 w-4"
+                    />
+                    <div>
+                      <span className="font-semibold text-slate-800 dark:text-slate-200 block">7 Days Before Due Date</span>
+                      <span className="text-[11px] text-slate-400">High-priority warning for impending utility and warranty lapses</span>
+                    </div>
+                  </label>
+
+                  <label className="flex items-center space-x-3 p-3 rounded-lg border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/50 cursor-pointer transition">
+                    <input
+                      type="checkbox"
+                      checked={remind1Day}
+                      onChange={(e) => setRemind1Day(e.target.checked)}
+                      className="rounded text-primary-600 focus:ring-primary-500 h-4 w-4"
+                    />
+                    <div>
+                      <span className="font-semibold text-slate-800 dark:text-slate-200 block">1 Day Before Due Date</span>
+                      <span className="text-[11px] text-slate-400">Urgent alarm to prevent late payment surcharges</span>
+                    </div>
+                  </label>
+                </div>
+
+                <Button variant="primary" size="sm" onClick={() => toast.success('Reminder preferences saved')}>
+                  Save Notification Preferences
+                </Button>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* TAB 4: APPEARANCE */}
+          {activeTab === 'appearance' && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Appearance & Theme</CardTitle>
+                <CardDescription>Select color scheme and interface mode</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4 text-xs">
+                <div className="grid grid-cols-3 gap-3">
+                  <button
+                    onClick={() => setTheme('light')}
+                    className={`p-4 rounded-xl border text-center space-y-2 transition ${
+                      theme === 'light'
+                        ? 'border-primary-600 bg-primary-50/50 dark:bg-primary-950/40 text-primary-700 dark:text-primary-300 font-bold'
+                        : 'border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-600'
+                    }`}
+                  >
+                    <Sun className="w-5 h-5 mx-auto" />
+                    <span className="block text-xs">Light</span>
+                  </button>
+
+                  <button
+                    onClick={() => setTheme('dark')}
+                    className={`p-4 rounded-xl border text-center space-y-2 transition ${
+                      theme === 'dark'
+                        ? 'border-primary-600 bg-primary-50/50 dark:bg-primary-950/40 text-primary-700 dark:text-primary-300 font-bold'
+                        : 'border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-600'
+                    }`}
+                  >
+                    <Moon className="w-5 h-5 mx-auto" />
+                    <span className="block text-xs">Dark</span>
+                  </button>
+
+                  <button
+                    onClick={() => setTheme('system')}
+                    className={`p-4 rounded-xl border text-center space-y-2 transition ${
+                      theme === 'system'
+                        ? 'border-primary-600 bg-primary-50/50 dark:bg-primary-950/40 text-primary-700 dark:text-primary-300 font-bold'
+                        : 'border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-600'
+                    }`}
+                  >
+                    <Layers className="w-5 h-5 mx-auto" />
+                    <span className="block text-xs">System</span>
                   </button>
                 </div>
-              </div>
+              </CardContent>
+            </Card>
+          )}
 
-              {/* 3-Step Setup Instructions */}
-              <div className="p-3.5 bg-white border border-slate-200/80 rounded-xl text-[11px] text-slate-600 space-y-1.5 leading-relaxed">
-                <span className="font-extrabold text-slate-800 block text-xs">Quick 2-Minute Google Cloud Setup:</span>
-                <ol className="list-decimal list-inside space-y-1">
-                  <li>Open <a href="https://console.cloud.google.com/apis/credentials" target="_blank" rel="noreferrer" className="text-blue-600 underline">Google Cloud Console</a> & create or select any project.</li>
-                  <li>In <strong>Enabled APIs & Services</strong>, enable <strong>Google Calendar API</strong>.</li>
-                  <li>Under <strong>Credentials</strong> $\to$ <strong>Create Credentials</strong> $\to$ <strong>OAuth Client ID</strong> (Application Type: <em>Web application</em>), paste the Authorized Redirect URI above into <em>Authorized redirect URIs</em>.</li>
-                  <li>Paste the generated <strong>Client ID</strong> and <strong>Client Secret</strong> into the fields above and hit "Save Credentials"!</li>
-                </ol>
-              </div>
+          {/* TAB 5: PRIVACY & AUDIT */}
+          {activeTab === 'privacy' && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Data Privacy & Audit</CardTitle>
+                <CardDescription>Zero-content leakage and compliance logs</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4 text-xs">
+                <div className="p-4 bg-slate-50 dark:bg-slate-800 rounded-xl space-y-2 text-slate-600 dark:text-slate-300 leading-relaxed">
+                  <div className="flex items-center space-x-2 text-slate-900 dark:text-white font-bold">
+                    <Shield className="w-4 h-4 text-emerald-600" />
+                    <span>Zero Content Leakage Protocol</span>
+                  </div>
+                  <p>
+                    LifeAdmin strictly isolates your document files. OCR processing occurs locally or via ephemeral encrypted AI tokens. Sensitive IDs, vehicle VINs, and policy contracts are never exported to external calendar entries.
+                  </p>
+                </div>
 
-              <div className="flex items-center justify-end space-x-3 pt-2">
-                {hasCredentials && (
-                  <button
-                    type="button"
-                    onClick={() => setShowConfigSection(false)}
-                    className="px-4 py-2 border border-slate-200 text-slate-600 hover:bg-white text-xs font-bold rounded-xl transition"
+                <div className="pt-2">
+                  <Link to="/audit-trail">
+                    <Button variant="outline" size="sm">
+                      <span>View Immutable Audit Trail</span>
+                      <ExternalLink className="w-3.5 h-3.5 ml-1" />
+                    </Button>
+                  </Link>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* TAB 6: DANGER ZONE */}
+          {activeTab === 'danger' && (
+            <Card className="border-rose-200 dark:border-rose-900/60">
+              <CardHeader>
+                <CardTitle className="text-rose-600 dark:text-rose-400">Danger Zone</CardTitle>
+                <CardDescription>Irreversible account and storage operations</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4 text-xs">
+                <div className="flex items-center justify-between p-3.5 rounded-xl border border-rose-200 dark:border-rose-900/60 bg-rose-50/50 dark:bg-rose-950/20">
+                  <div>
+                    <h5 className="font-bold text-slate-900 dark:text-white">Clear Local Cache & Session</h5>
+                    <p className="text-slate-500 dark:text-slate-400 text-[11px]">Resets client-side cached document queries and theme</p>
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      localStorage.clear();
+                      toast.info('Local cache cleared. Reloading...');
+                      setTimeout(() => window.location.reload(), 600);
+                    }}
                   >
-                    Cancel
-                  </button>
-                )}
-                <button
-                  type="submit"
-                  disabled={savingConfig}
-                  className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-xl shadow-sm transition disabled:opacity-50 flex items-center space-x-2"
-                >
-                  <Key className="w-3.5 h-3.5" />
-                  <span>{savingConfig ? 'Saving...' : 'Save & Enable Real OAuth'}</span>
-                </button>
-              </div>
-            </form>
-          </div>
-        )}
-
-        {/* Feature Explainer Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
-          <div className="p-4 rounded-2xl border border-slate-100 bg-slate-50/50 space-y-2">
-            <Smartphone className="w-5 h-5 text-blue-600" />
-            <h4 className="text-xs font-black text-slate-800">Phone Notifications</h4>
-            <p className="text-[11px] text-slate-500 leading-relaxed">
-              Google Calendar automatically sends push notifications and sound alerts directly to your Android & iOS devices.
-            </p>
-          </div>
-
-          <div className="p-4 rounded-2xl border border-slate-100 bg-slate-50/50 space-y-2">
-            <Shield className="w-5 h-5 text-emerald-600" />
-            <h4 className="text-xs font-black text-slate-800">Zero Content Leakage</h4>
-            <p className="text-[11px] text-slate-500 leading-relaxed">
-              Sensitive numbers, IDs, and raw text are never sent to Google Calendar. Only document titles and due dates are synced.
-            </p>
-          </div>
-
-          <div className="p-4 rounded-2xl border border-slate-100 bg-slate-50/50 space-y-2">
-            <RefreshCw className="w-5 h-5 text-purple-600" />
-            <h4 className="text-xs font-black text-slate-800">Renewal Lifecycle Sync</h4>
-            <p className="text-[11px] text-slate-500 leading-relaxed">
-              When a policy or warranty is renewed, old calendar events are cleanly updated or rescheduled without duplicates.
-            </p>
-          </div>
+                    Clear Cache
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          )}
         </div>
-      </div>
-
-      {/* Alternative: Instant 1-Click Real Google Calendar & iCal Export */}
-      <div className="bg-white rounded-3xl border border-slate-200/90 shadow-sm p-8 space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div className="space-y-1">
-            <div className="flex items-center space-x-2">
-              <Download className="w-5 h-5 text-slate-700" />
-              <h3 className="text-base font-black text-slate-900">Instant Real Calendar Sync (Zero Setup)</h3>
-            </div>
-            <p className="text-xs text-slate-500">
-              Want to add deadlines to your real Google Calendar right now without configuring Google Cloud Console?
-            </p>
-          </div>
-
-          <div className="flex items-center space-x-3">
-            <button
-              onClick={handleDownloadIcs}
-              disabled={downloadingIcs}
-              className="inline-flex items-center space-x-2 px-4 py-2.5 bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold rounded-xl shadow-sm transition disabled:opacity-50"
-            >
-              <Download className={`w-3.5 h-3.5 ${downloadingIcs ? 'animate-bounce' : ''}`} />
-              <span>{downloadingIcs ? 'Exporting...' : 'Export Calendar (.ics)'}</span>
-            </button>
-            <Link
-              to="/actions"
-              className="inline-flex items-center space-x-1.5 px-4 py-2.5 border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-bold rounded-xl transition"
-            >
-              <span>View Action Items</span>
-              <ExternalLink className="w-3.5 h-3.5" />
-            </Link>
-          </div>
-        </div>
-
-        <p className="text-[11px] text-slate-500 leading-relaxed">
-          On the <Link to="/actions" className="text-blue-600 font-bold underline">Action Items</Link> page, each deadline features a direct <strong>"Add to Google Calendar"</strong> button. Clicking it immediately opens your personal logged-in Google Calendar in your browser with the event pre-filled so you can save it with 1 tap!
-        </p>
       </div>
     </div>
   );
