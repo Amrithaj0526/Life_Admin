@@ -6,6 +6,7 @@ import { dashboardController } from '../controllers/dashboardController.js';
 import { searchController } from '../controllers/searchController.js';
 import { relationshipController } from '../controllers/relationshipController.js';
 import { vaultController } from '../controllers/vaultController.js';
+import { lifecycleController } from '../controllers/lifecycleController.js';
 import { authenticate } from '../middleware/auth.js';
 import { uploadMiddleware } from '../middleware/upload.js';
 import { getDatabase } from '../config/database.js';
@@ -63,3 +64,11 @@ apiRouter.delete('/relationships/:id', authenticate, relationshipController.dele
 apiRouter.get('/vaults', authenticate, vaultController.list);
 apiRouter.post('/vaults', authenticate, vaultController.create);
 apiRouter.post('/vaults/:id/members', authenticate, vaultController.addMember);
+
+// Renewal Workflow & Version Comparison Routes
+apiRouter.post('/documents/:id/start-renewal', authenticate, lifecycleController.startRenewal);
+apiRouter.post('/documents/:id/renew', authenticate, uploadMiddleware.single('file'), lifecycleController.renewDocument);
+apiRouter.get('/documents/:id/compare-versions', authenticate, lifecycleController.compareVersions);
+
+// Audit History Trail
+apiRouter.get('/audit-logs', authenticate, lifecycleController.getAuditLogs);

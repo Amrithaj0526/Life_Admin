@@ -30,6 +30,7 @@ export const MainLayout: React.FC = () => {
     { to: '/actions', label: 'Action Items', icon: CheckSquare },
     { to: '/search', label: 'Search & Natural Q&A', icon: Search },
     { to: '/vaults', label: 'Family Vault', icon: Users },
+    { to: '/audit-trail', label: 'Audit Trail', icon: Shield },
   ];
 
   return (

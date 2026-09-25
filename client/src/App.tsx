@@ -11,6 +11,7 @@ import { UploadPage } from './pages/UploadPage';
 import { ActionsPage } from './pages/ActionsPage';
 import { SearchPage } from './pages/SearchPage';
 import { VaultsPage } from './pages/VaultsPage';
+import { AuditHistoryPage } from './pages/AuditHistoryPage';
 
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user, isLoading } = useAuth();
@@ -56,6 +57,7 @@ export function App() {
             <Route path="actions" element={<ActionsPage />} />
             <Route path="search" element={<SearchPage />} />
             <Route path="vaults" element={<VaultsPage />} />
+            <Route path="audit-trail" element={<AuditHistoryPage />} />
           </Route>
 
           <Route path="*" element={<Navigate to="/dashboard" replace />} />

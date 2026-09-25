@@ -27,7 +27,7 @@ export interface DocumentItem {
   currency?: string;
   confidence?: number;
   verification_status?: 'PENDING' | 'VERIFIED' | 'REJECTED';
-  renewal_status?: string;
+  renewal_status?: 'NOT_REQUIRED' | 'UPCOMING' | 'DUE' | 'IN_PROGRESS' | 'RENEWED' | 'EXPIRED';
   pending_actions_count?: number;
   created_at: string;
   updated_at: string;
@@ -49,6 +49,24 @@ export interface ActionItem {
   provider?: string;
   category_name?: string;
   category_color?: string;
+}
+
+export interface FieldDiff {
+  fieldName: string;
+  oldValue: string;
+  newValue: string;
+  status: 'ADDED' | 'REMOVED' | 'CHANGED' | 'UNCHANGED';
+}
+
+export interface AuditLogItem {
+  id: string;
+  user_id: string;
+  user_name?: string;
+  entity_type: string;
+  entity_id: string;
+  action: string;
+  metadata?: string;
+  created_at: string;
 }
 
 export interface DashboardData {
