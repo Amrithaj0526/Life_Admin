@@ -10,6 +10,11 @@ app.use(cors({ origin: true, credentials: true }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// Public Health Check
+app.get('/health', (_req, res) => {
+  res.json({ status: 'ok', service: 'LifeAdmin API', timestamp: new Date().toISOString() });
+});
+
 // Register all API routes
 app.use('/api', apiRouter);
 

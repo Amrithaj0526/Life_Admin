@@ -8,6 +8,7 @@ import { relationshipController } from '../controllers/relationshipController.js
 import { vaultController } from '../controllers/vaultController.js';
 import { lifecycleController } from '../controllers/lifecycleController.js';
 import { calendarController } from '../controllers/calendarController.js';
+import { socialImpactController } from '../controllers/socialImpactController.js';
 import { authenticate } from '../middleware/auth.js';
 import { uploadMiddleware } from '../middleware/upload.js';
 import { getDatabase } from '../config/database.js';
@@ -82,3 +83,8 @@ apiRouter.delete('/calendar/google/disconnect', authenticate, calendarController
 apiRouter.post('/calendar/google/sync-all', authenticate, calendarController.syncAll);
 apiRouter.post('/calendar/google/sync/:reminderId', authenticate, calendarController.syncReminder);
 apiRouter.delete('/calendar/google/event/:reminderId', authenticate, calendarController.removeEvent);
+
+// Social Impact, Emergency Kit & Citizen Rights Routes
+apiRouter.get('/impact/emergency-kit', authenticate, socialImpactController.getEmergencyKit);
+apiRouter.get('/impact/penalty-savings', authenticate, socialImpactController.getPenaltySavings);
+apiRouter.get('/impact/citizen-rights', authenticate, socialImpactController.getCitizenRightsAdvisor);

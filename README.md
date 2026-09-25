@@ -100,4 +100,16 @@ Actionable Dashboard + Natural Language Search + Version History
 9. **Family Vault Spaces:** Role-based access control (`OWNER`, `EDITOR`, `VIEWER`) for shared household and family documents.
 10. **Audit Trail:** Immutable logging of document uploads, AI extractions, verifications, and action completions.
 11. **Google Calendar Cross-Device Sync:** OAuth 2.0 calendar integration creating automated events and multi-stage alarms (30d, 7d, 1d) on users' Google Calendars for native smartphone notifications on Android & iOS without exposing sensitive document content.
+12. **Renewal Engine & Field-Level Version Diff:** Automatically tracks year-over-year renewals (e.g., Insurance Policy 2024 $\to$ 2025) with side-by-side field diff highlighting premium hikes, coverage changes, or altered terms.
+13. **Citizen Protection & Social Impact Hub (`/social-impact`):**
+    - **One-Tap Emergency Medical Dossier:** Instant 1-page printable emergency card aggregating blood group, chronic conditions, health insurance TPA cashless authorization numbers, and policy cards during critical medical moments.
+    - **Household Penalty & Fine Prevention Meter:** Quantifies real financial savings from avoided traffic fines (MV Act Sec 196), power utility reconnection fees, passport rush penalties, and late finance charges.
+    - **Citizen Rights & Consumer Protection Advisor:** Automatically surfaces statutory rights and deadlines under Indian law (IRDAI claim settlement rules, Consumer Protection Act 2019 warranty rights, and Electricity Ombudsman dispute protocols) to protect consumers from corporate negligence.
+
+---
+
+## 5. Zero-Config Local Database & Production Scale
+- **Default Local Mode:** Powered by embedded **SQLite WAL (`lifeadmin.db`)** via `better-sqlite3`. Zero installation, zero Docker, zero external database setup required. Runs instantly out of the box.
+- **Enterprise Mode:** Set `DATABASE_URL=postgresql://user:password@host:5432/lifeadmin` in `.env` to switch to high-concurrency PostgreSQL without modifying application logic.
+
 

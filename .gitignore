@@ -33,3 +33,8 @@ temp/
 *.njsproj
 *.sln
 *.sw?
+
+# Database
+database/*.db*
+database/*.sqlite*
+

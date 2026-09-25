@@ -13,6 +13,7 @@ import { SearchPage } from './pages/SearchPage';
 import { VaultsPage } from './pages/VaultsPage';
 import { AuditHistoryPage } from './pages/AuditHistoryPage';
 import { SettingsPage } from './pages/SettingsPage';
+import { SocialImpactPage } from './pages/SocialImpactPage';
 
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user, isLoading } = useAuth();
@@ -58,6 +59,7 @@ export function App() {
             <Route path="actions" element={<ActionsPage />} />
             <Route path="search" element={<SearchPage />} />
             <Route path="vaults" element={<VaultsPage />} />
+            <Route path="social-impact" element={<SocialImpactPage />} />
             <Route path="audit-trail" element={<AuditHistoryPage />} />
             <Route path="settings" element={<SettingsPage />} />
           </Route>
