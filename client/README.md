@@ -1,32 +1,65 @@
-# React + TypeScript + Vite
+# LifeAdmin — Frontend Client
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+The frontend application for LifeAdmin is built with **React 19**, **TypeScript**, **Tailwind CSS**, and **Vite**, following Linear/Notion-inspired minimalist SaaS design requirements.
 
-Currently, two official plugins are available:
+---
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## 1. Tech Stack & Architecture
 
-## React Compiler
+- **Framework:** React 19 + TypeScript + Vite 5
+- **Styling:** Tailwind CSS (Custom `#4F46E5` primary color system + Dark Mode `#0F172A`)
+- **Typography:** Inter (Google Fonts) with strict weight and line-height hierarchy
+- **Icons:** Lucide React (Uniform 16px to 20px icons across all components)
+- **Charts:** Recharts (Area charts, Bar charts, Donut charts)
+- **State & Context:**
+  - `AuthContext`: JWT persistence, login, logout, and protected route guards.
+  - `ThemeContext`: Light, Dark, and System theme synchronization.
+  - `ToastContext`: Accessible non-intrusive floating toasts (`toast.success`, `toast.error`, `toast.warning`).
+- **Command Palette:** Global quick search (`⌘K` / `Ctrl + K`) across documents and deadlines.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+---
 
-## Expanding the Oxlint configuration
+## 2. Directory Structure
 
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
-
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
+```text
+client/src/
+├── assets/          # Static assets & illustrations
+├── components/
+│   └── ui/          # Reusable component library (button, badge, card, dialog, skeleton, command-menu)
+├── context/         # AuthContext, ThemeContext, ToastContext
+├── layouts/         # MainLayout (Linear-style sidebar + search header)
+├── pages/           # Application views
+│   ├── ActionsPage.tsx          # Deadlines grouped by Today, This Week, Next Month, Later
+│   ├── AnalyticsPage.tsx        # Recharts analytics & intelligence
+│   ├── AuditHistoryPage.tsx     # Immutable compliance audit trail
+│   ├── CalendarPage.tsx         # Interactive full-month calendar grid
+│   ├── DashboardPage.tsx        # Executive summary, 4 metrics, AI insights, deadline list
+│   ├── DocumentDetailPage.tsx   # Human-in-the-loop review, relations, version diffs
+│   ├── DocumentsPage.tsx        # Grid & list view with category filter pills
+│   ├── HelpPage.tsx             # FAQ and knowledge base
+│   ├── LoginPage.tsx            # Clean sign-in screen
+│   ├── RegisterPage.tsx         # Registration screen
+│   ├── SearchPage.tsx           # Natural language query search
+│   ├── SettingsPage.tsx         # Categorized settings (OAuth, Account, Notifications, Appearance)
+│   ├── SocialImpactPage.tsx     # Emergency Medical Dossier & Citizen Rights Advisor
+│   ├── UploadPage.tsx           # Drag & drop upload with step progress bar
+│   └── VaultsPage.tsx           # Shared family vaults & spaces
+├── services/        # Axios API client with bearer token interceptor
+├── types/           # TypeScript interface definitions
+└── utils/           # Helper utilities (calendar web intent link generator)
 ```
 
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+---
+
+## 3. Development Commands
+
+```bash
+# Start development server on port 5173
+npm run dev
+
+# Run TypeScript typecheck and build production bundle
+npm run build
+
+# Preview production build locally
+npm run preview
+```

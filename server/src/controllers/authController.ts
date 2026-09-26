@@ -43,7 +43,7 @@ export const authController = {
       );
 
       const token = jwt.sign({ id: userId, name, email }, config.jwtSecret, {
-        expiresIn: config.jwtExpiresIn,
+        expiresIn: config.jwtExpiresIn as any,
       });
 
       return res.status(201).json({
@@ -78,7 +78,7 @@ export const authController = {
       const token = jwt.sign(
         { id: user.id, name: user.name, email: user.email },
         config.jwtSecret,
-        { expiresIn: config.jwtExpiresIn }
+        { expiresIn: config.jwtExpiresIn as any }
       );
 
       // Audit log
