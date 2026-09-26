@@ -199,6 +199,70 @@ export const DashboardPage: React.FC = () => {
         </Card>
       </div>
 
+      {/* How LifeAdmin Works 6-Step Guide for Everyday Users */}
+      <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/90 dark:border-slate-800 p-5 shadow-xs space-y-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-2.5">
+            <span className="w-7 h-7 rounded-lg bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400 flex items-center justify-center font-bold text-xs">
+              ⚡
+            </span>
+            <div>
+              <h3 className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white">
+                How LifeAdmin Works
+              </h3>
+              <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                Six simple steps to keep your documents organized and avoid missing deadlines.
+              </p>
+            </div>
+          </div>
+          <Link
+            to="/help"
+            className="text-[11px] font-semibold text-indigo-600 dark:text-indigo-400 hover:underline flex items-center space-x-1"
+          >
+            <span>Learn more</span>
+            <ChevronRight className="w-3.5 h-3.5" />
+          </Link>
+        </div>
+
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2.5 pt-1">
+          <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800 space-y-1">
+            <span className="text-[9px] font-black uppercase text-indigo-600 dark:text-indigo-400 tracking-wider block">1. Connect</span>
+            <h4 className="text-xs font-bold text-slate-900 dark:text-white">Google Calendar</h4>
+            <p className="text-[10px] text-slate-500 leading-tight">Link calendar once for automatic mobile alerts.</p>
+          </div>
+
+          <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800 space-y-1">
+            <span className="text-[9px] font-black uppercase text-indigo-600 dark:text-indigo-400 tracking-wider block">2. Add Docs</span>
+            <h4 className="text-xs font-bold text-slate-900 dark:text-white">Upload Files</h4>
+            <p className="text-[10px] text-slate-500 leading-tight">Add bills, certificates, PUC, insurance & cards.</p>
+          </div>
+
+          <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800 space-y-1">
+            <span className="text-[9px] font-black uppercase text-indigo-600 dark:text-indigo-400 tracking-wider block">3. AI Insights</span>
+            <h4 className="text-xs font-bold text-slate-900 dark:text-white">Extract Info</h4>
+            <p className="text-[10px] text-slate-500 leading-tight">OCR & Gemini identify dates, amounts & actions.</p>
+          </div>
+
+          <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800 space-y-1">
+            <span className="text-[9px] font-black uppercase text-indigo-600 dark:text-indigo-400 tracking-wider block">4. In Control</span>
+            <h4 className="text-xs font-bold text-slate-900 dark:text-white">You Verify</h4>
+            <p className="text-[10px] text-slate-500 leading-tight">Confirm extracted dates before activating reminders.</p>
+          </div>
+
+          <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800 space-y-1">
+            <span className="text-[9px] font-black uppercase text-indigo-600 dark:text-indigo-400 tracking-wider block">5. Never Miss</span>
+            <h4 className="text-xs font-bold text-slate-900 dark:text-white">Active Deadlines</h4>
+            <p className="text-[10px] text-slate-500 leading-tight">Prioritized Action Center flags upcoming risks.</p>
+          </div>
+
+          <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800 space-y-1">
+            <span className="text-[9px] font-black uppercase text-indigo-600 dark:text-indigo-400 tracking-wider block">6. Reminders</span>
+            <h4 className="text-xs font-bold text-slate-900 dark:text-white">Phone Alerts</h4>
+            <p className="text-[10px] text-slate-500 leading-tight">Google Calendar reminds you 30d, 7d & 1d before.</p>
+          </div>
+        </div>
+      </div>
+
       {/* 3. Contextual AI Insights Banner */}
       <div className="p-4 sm:p-5 rounded-xl border border-primary-200/80 dark:border-primary-900/60 bg-primary-50/60 dark:bg-primary-950/30 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-start sm:items-center space-x-3">

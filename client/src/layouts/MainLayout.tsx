@@ -43,10 +43,10 @@ export const MainLayout: React.FC = () => {
   const navPrimary = [
     { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { to: '/documents', label: 'Documents', icon: FileText },
-    { to: '/actions', label: 'Deadlines', icon: Clock },
+    { to: '/actions', label: 'Action Center', icon: Clock },
     { to: '/calendar', label: 'Calendar', icon: CalendarIcon },
     { to: '/analytics', label: 'Analytics', icon: BarChart3 },
-    { to: '/social-impact', label: 'Citizen Protection', icon: HeartHandshake },
+    { to: '/social-impact', label: 'India & Community', icon: HeartHandshake },
   ];
 
   const navSecondary = [
@@ -63,10 +63,10 @@ export const MainLayout: React.FC = () => {
     if (path.includes('/documents/') && path !== '/documents') return 'Document Details';
     if (path.includes('/documents')) return 'Documents';
     if (path.includes('/upload')) return 'Upload & Extraction';
-    if (path.includes('/actions')) return 'Deadlines & Reminders';
+    if (path.includes('/actions')) return 'Action Center & Deadlines';
     if (path.includes('/calendar')) return 'Calendar';
     if (path.includes('/analytics')) return 'Analytics & Statistics';
-    if (path.includes('/social-impact')) return 'Citizen Protection Hub';
+    if (path.includes('/social-impact')) return 'India & Community';
     if (path.includes('/vaults')) return 'Family Vault';
     if (path.includes('/audit-trail')) return 'Audit Trail';
     if (path.includes('/settings')) return 'Settings';

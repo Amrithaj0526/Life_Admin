@@ -8,7 +8,7 @@ export const socialImpactController = {
       const userId = req.user!.id;
       const db = await getDatabase();
 
-      // Fetch critical identity, medical, and insurance documents
+      // Fetch critical identity, medical/healthcare, and insurance documents
       const docsRes = await db.query(
         `SELECT d.id, d.title, d.provider, d.document_number, d.expiry_date,
                 d.owner_name, d.summary, d.status,
@@ -16,7 +16,7 @@ export const socialImpactController = {
          FROM documents d
          JOIN categories c ON d.category_id = c.id
          WHERE d.user_id = $1
-           AND c.name IN ('Medical', 'Insurance', 'Identity')
+           AND c.name IN ('Healthcare', 'Medical', 'Insurance', 'Identity')
            AND d.status != 'ARCHIVED'
          ORDER BY c.name ASC, d.created_at DESC`,
         [userId]
@@ -43,7 +43,7 @@ export const socialImpactController = {
     }
   },
 
-  // 2. Financial Penalty & Fine Prevention Meter
+  // 2. Financial Penalty & Fine Prevention Meter (India Statutory Rates in ₹ INR)
   async getPenaltySavings(req: Request, res: Response) {
     try {
       const userId = req.user!.id;
@@ -71,18 +71,18 @@ export const socialImpactController = {
         [userId]
       );
 
-      // Calculate realistic societal financial impact:
-      // - Insurance lapse fine / reinstatement fee: ~$150 - $300
-      // - Utility bill disconnection / reconnection & late fee: ~$35 - $60
-      // - Vehicle inspection / pollution expired fine: ~$100 - $250
-      // - Warranty lapse hardware repair loss saved: ~$200 - $500
+      // Calculate realistic Indian societal financial impact:
+      // - Insurance lapse: ₹10,000 - ₹25,000 risk + loss of NCB
+      // - Motor Vehicle Act Section 190(2) PUC lapse fine: ₹10,000 / Expired insurance: ₹2,000
+      // - Utility disconnection / reconnection & late fee: ₹500 - ₹1,500
+      // - Warranty lapse repair loss saved: ₹3,500 - ₹8,000
       let totalSavingsEstimated = 0;
       const breakdown = completedRes.rows.map((row: any) => {
-        let estimatedFineAvoided = 50;
-        if (row.category_name === 'Insurance') estimatedFineAvoided = 250;
-        else if (row.category_name === 'Vehicle') estimatedFineAvoided = 150;
-        else if (row.category_name === 'Bills') estimatedFineAvoided = 45;
-        else if (row.category_name === 'Warranty') estimatedFineAvoided = 350;
+        let estimatedFineAvoided = 1500;
+        if (row.category_name === 'Insurance') estimatedFineAvoided = 12000;
+        else if (row.category_name === 'Vehicle') estimatedFineAvoided = 10000;
+        else if (row.category_name === 'Bills' || row.category_name === 'Utilities') estimatedFineAvoided = 750;
+        else if (row.category_name === 'Warranties' || row.category_name === 'Warranty') estimatedFineAvoided = 4500;
 
         totalSavingsEstimated += estimatedFineAvoided;
         return {
@@ -95,6 +95,7 @@ export const socialImpactController = {
       });
 
       return res.json({
+        currency: '₹',
         totalSavingsEstimated,
         actionsCompletedCount: completedRes.rows.length,
         actionsAtRiskCount: pendingRes.rows.length,
@@ -105,44 +106,67 @@ export const socialImpactController = {
     }
   },
 
-  // 3. Citizen Legal & Consumer Rights Advisor (Guides on what to do when warranty / insurance denies claims)
+  // 3. Citizen Legal & Consumer Rights Advisor (Statutory Indian Consumer Rights)
   async getCitizenRightsAdvisor(req: Request, res: Response) {
     try {
       const { category } = req.query;
 
       const rightsGuidance: Record<string, any> = {
         Insurance: {
-          title: 'Consumer Health & Motor Insurance Safeguards',
-          statutoryGracePeriod: 'Most insurance regulations mandate a 15 to 30-day grace period for policy renewals.',
+          title: 'IRDAI Health & Life Insurance Citizen Safeguards',
+          statutoryGracePeriod: 'IRDAI mandates a 30-day grace period for yearly premium payments (15 days for monthly mode).',
           rights: [
-            'Insurer cannot arbitrarily deny cashless claims if pre-authorization was submitted within 24 hours of emergency admission.',
-            'No Claim Bonus (NCB) can be transferred when switching vehicle insurance providers within 90 days of expiry.',
-            'Portability rights allow transferring health insurance without losing accrued waiting-period credits.',
+            'Hospitals & insurers must process cashless pre-authorization within 1 hour and final discharge authorization within 3 hours under IRDAI Master Circular.',
+            'No Claim Bonus (NCB) of up to 50% can be retained or transferred to a new vehicle within 90 days of policy cancellation/expiry.',
+            'Portability rights: You can switch health insurance companies without losing accrued waiting-period credits for pre-existing diseases by applying 45 days before renewal.',
+            'Free-look period of 15–30 days allows full refund of premium if dissatisfied with policy terms.',
+          ],
+          ombudsmanLink: 'https://bimabharosa.irdai.gov.in',
+        },
+        Vehicle: {
+          title: 'Motor Vehicles Act 2019 & DigiLocker Digital Legal Validity',
+          statutoryGracePeriod: 'Driving Licence can be renewed up to 1 year before or after expiry without re-test.',
+          rights: [
+            'Rule 139 of the Central Motor Vehicles Rules (CMVR) mandates that traffic police and RTOs MUST accept digital RC, DL, and Insurance stored in DigiLocker/mParivahan as legally valid originals.',
+            'Under Section 190(2) of the Motor Vehicles Act, expired PUC attracts up to ₹10,000 fine; valid digital PUC certificate must be accepted across all states.',
+            'Third-party motor insurance is legally mandatory under Section 146; grace periods do NOT apply to third-party liability coverage while driving on public roads.',
+          ],
+          ombudsmanLink: 'https://parivahan.gov.in',
+        },
+        Warranty: {
+          title: 'Consumer Protection Act 2019 & Right-to-Repair Portal',
+          statutoryGracePeriod: 'Statutory warranty guarantees free repair or replacement during the manufacturer warranty period.',
+          rights: [
+            'Under the Consumer Protection Act 2019, manufacturers are liable for product defects. "Warranty void if sticker broken" cannot deny service for genuine manufacturing defects.',
+            'Right to Repair India (Ministry of Consumer Affairs): Authorized service centres must supply genuine spare parts and repair manuals for electronics and appliances.',
+            'Deficiency in service or repetitive failures during the warranty window entitles consumers to full replacement or refund via the District Consumer Disputes Redressal Commission.',
           ],
           ombudsmanLink: 'https://consumerhelpline.gov.in',
         },
-        Warranty: {
-          title: 'Consumer Product Protection & Right-to-Repair',
-          statutoryGracePeriod: 'Implied statutory warranty protects against manufacturing defects even if standard warranty recently elapsed.',
+        Utilities: {
+          title: 'Electricity (Rights of Consumers) Rules 2020',
+          statutoryGracePeriod: 'A mandatory minimum 15-day clear advance notice in writing or SMS is required before any electricity disconnection.',
           rights: [
-            'Manufacturers must provide access to genuine spare parts and authorized repair services.',
-            'Unfair warranty voiding tags (e.g., "warranty void if sticker removed") are legally unenforceable in many consumer jurisdictions.',
-            'If a product repeatedly fails within the warranty term, consumers have the legal right to a full replacement or refund.',
+            'Consumers have the statutory right to request testing of meter accuracy if billing is abnormally high, with testing completed within statutory time limits.',
+            'Disconnection cannot be carried out on weekends, public holidays, or after 5:00 PM.',
+            'Restoration of power supply must happen within 6 hours in urban areas (24 hours in rural areas) upon payment of undisputed arrears.',
           ],
           ombudsmanLink: 'https://consumerhelpline.gov.in',
         },
         Bills: {
-          title: 'Essential Utility Consumer Protections',
-          statutoryGracePeriod: 'Disconnection notice of at least 15 days is mandatory prior to cutting essential electricity or water supplies.',
+          title: 'Electricity (Rights of Consumers) Rules 2020',
+          statutoryGracePeriod: 'A mandatory minimum 15-day clear advance notice in writing or SMS is required before any electricity disconnection.',
           rights: [
-            'Disputed meter readings entitle consumers to an independent audit before settlement.',
-            'Utility companies cannot levy extortionate reconnection charges without itemized cost justification.',
+            'Consumers have the statutory right to request testing of meter accuracy if billing is abnormally high, with testing completed within statutory time limits.',
+            'Disconnection cannot be carried out on weekends, public holidays, or after 5:00 PM.',
+            'Restoration of power supply must happen within 6 hours in urban areas (24 hours in rural areas) upon payment of undisputed arrears.',
           ],
           ombudsmanLink: 'https://consumerhelpline.gov.in',
         },
       };
 
       const selected = (category && rightsGuidance[category as string]) || rightsGuidance['Insurance'];
+      return res.json(selected);
       return res.json(selected);
     } catch (err: any) {
       return res.status(500).json({ error: err.message });

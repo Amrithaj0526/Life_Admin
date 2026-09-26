@@ -59,8 +59,8 @@ export class AIService {
         const prompt = `You are LifeAdmin's document intelligence engine.
 Analyze the following document text extracted via OCR. Return STRICT VALID JSON matching this structure:
 {
-  "documentType": string (e.g. "vehicle_insurance", "electricity_bill", "passport", "warranty", "medical_report"),
-  "categoryName": string (one of: Insurance, Vehicle, Bills, Warranty, Identity, Medical, Property, Finance, Education, Subscription, Other),
+  "documentType": string (e.g. "vehicle_insurance", "electricity_bill", "passport", "warranty", "medical_report", "employment_offer", "degree_certificate"),
+  "categoryName": string (one of: Identity, Education, Healthcare, Insurance, Vehicle, Property, Employment, Finance, Utilities, Bills, Government, Certificates, Warranties, Subscriptions, Other),
   "title": string,
   "provider": string or null,
   "documentNumber": string or null,

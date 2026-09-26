@@ -57,16 +57,20 @@ class SQLiteDatabaseClient implements IDatabaseClient {
 
   private seedDefaultCategories() {
     const categories = [
-      { id: 'cat_insurance', name: 'Insurance', icon: 'Shield', color: '#3b82f6', description: 'Health, motor, life and property insurance' },
-      { id: 'cat_vehicle', name: 'Vehicle', icon: 'Car', color: '#10b981', description: 'Registration, service, pollution & license' },
-      { id: 'cat_bills', name: 'Bills', icon: 'Receipt', color: '#f59e0b', description: 'Electricity, water, internet & utilities' },
-      { id: 'cat_warranty', name: 'Warranty', icon: 'Award', color: '#8b5cf6', description: 'Electronics, appliances & equipment' },
-      { id: 'cat_identity', name: 'Identity', icon: 'UserCheck', color: '#ec4899', description: 'Passport, national ID, licenses' },
-      { id: 'cat_medical', name: 'Medical', icon: 'Activity', color: '#ef4444', description: 'Prescriptions, lab reports, doctor records' },
-      { id: 'cat_property', name: 'Property', icon: 'Home', color: '#06b6d4', description: 'Rental agreements, tax receipts, deeds' },
-      { id: 'cat_finance', name: 'Finance', icon: 'DollarSign', color: '#14b8a6', description: 'Taxes, investments, bank statements' },
-      { id: 'cat_education', name: 'Education', icon: 'GraduationCap', color: '#6366f1', description: 'Degrees, diplomas, certifications' },
-      { id: 'cat_subscription', name: 'Subscription', icon: 'RefreshCw', color: '#d946ef', description: 'Digital memberships and subscriptions' },
+      { id: 'cat_identity', name: 'Identity', icon: 'UserCheck', color: '#ec4899', description: 'Passport, Aadhaar, PAN, voter ID, driving license' },
+      { id: 'cat_education', name: 'Education', icon: 'GraduationCap', color: '#6366f1', description: 'Certificates, degrees, scholarships, fee receipts' },
+      { id: 'cat_medical', name: 'Healthcare', icon: 'Activity', color: '#ef4444', description: 'Prescriptions, lab reports, health records' },
+      { id: 'cat_insurance', name: 'Insurance', icon: 'Shield', color: '#3b82f6', description: 'Health, motor, life and term insurance policies' },
+      { id: 'cat_vehicle', name: 'Vehicle', icon: 'Car', color: '#10b981', description: 'RC, vehicle insurance, PUC, service records' },
+      { id: 'cat_property', name: 'Property & Rental', icon: 'Home', color: '#06b6d4', description: 'Rental agreements, property tax receipts, deeds' },
+      { id: 'cat_employment', name: 'Employment', icon: 'Briefcase', color: '#0ea5e9', description: 'Offer letters, payslips, experience certificates, Form 16' },
+      { id: 'cat_finance', name: 'Finance', icon: 'DollarSign', color: '#14b8a6', description: 'Taxes, investments, bank statements, loans' },
+      { id: 'cat_utilities', name: 'Utilities', icon: 'Zap', color: '#eab308', description: 'Electricity, water, gas, broadband connections' },
+      { id: 'cat_bills', name: 'Bills & Receipts', icon: 'Receipt', color: '#f59e0b', description: 'Household receipts, maintenance, purchase invoices' },
+      { id: 'cat_government', name: 'Government & Civic', icon: 'Landmark', color: '#f97316', description: 'Municipal records, ration cards, voter slips' },
+      { id: 'cat_certificates', name: 'Certificates', icon: 'FileCheck', color: '#a855f7', description: 'Birth, marriage, community, domicile records' },
+      { id: 'cat_warranty', name: 'Warranties', icon: 'Award', color: '#8b5cf6', description: 'Electronics, appliances, equipment guarantees' },
+      { id: 'cat_subscription', name: 'Subscriptions', icon: 'RefreshCw', color: '#d946ef', description: 'Digital memberships, periodic subscriptions' },
       { id: 'cat_other', name: 'Other', icon: 'Folder', color: '#64748b', description: 'Miscellaneous personal records' },
     ];
 

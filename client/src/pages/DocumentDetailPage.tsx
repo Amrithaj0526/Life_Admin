@@ -239,63 +239,146 @@ export const DocumentDetailPage: React.FC = () => {
       )}
 
       {/* Human-In-The-Loop Verification Card */}
-      {doc.verification_status !== 'VERIFIED' && (
-        <div className="bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200/90 rounded-3xl p-6 shadow-sm">
-          <div className="flex items-center space-x-3 mb-4">
-            <ShieldCheck className="w-6 h-6 text-amber-600" />
-            <div>
-              <h3 className="font-black text-amber-900">Verify AI-Extracted Information</h3>
-              <p className="text-xs text-amber-700">
-                Please confirm or adjust the details detected by our AI engine to activate this document.
-              </p>
+      {doc.verification_status !== 'VERIFIED' ? (
+        <div className="bg-gradient-to-r from-amber-50 via-orange-50 to-amber-50 border-2 border-amber-300/80 rounded-3xl p-6 shadow-sm space-y-4">
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex items-start space-x-3.5">
+              <div className="p-2.5 bg-amber-500 text-white rounded-2xl shadow-sm shadow-amber-500/30 shrink-0 mt-0.5">
+                <ShieldCheck className="w-6 h-6" />
+              </div>
+              <div>
+                <h3 className="text-base font-black text-amber-950">
+                  AI Detected Information — Please Confirm
+                </h3>
+                <p className="text-xs text-amber-800/90 mt-1 max-w-2xl leading-relaxed">
+                  OCR and AI can occasionally make mistakes. Please verify that the detected dates, amounts, and numbers match your original paper before LifeAdmin activates automated reminders on your Google Calendar.
+                </p>
+              </div>
             </div>
+            <span className="hidden sm:inline-block px-3 py-1 rounded-full text-[11px] font-black uppercase tracking-wider bg-amber-200/80 text-amber-900 border border-amber-300">
+              Awaiting Verification
+            </span>
           </div>
 
-          <form onSubmit={handleVerify} className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <form onSubmit={handleVerify} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 pt-2">
             <div>
-              <label className="block text-xs font-bold text-amber-900 mb-1">Document Title</label>
+              <label className="block text-[11px] font-bold text-amber-900 uppercase tracking-wider mb-1">Document Title</label>
               <input
                 type="text"
                 value={formData.title}
                 onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                className="w-full text-xs font-medium px-3.5 py-2 bg-white border border-amber-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500"
+                className="w-full text-xs font-medium px-3.5 py-2.5 bg-white border border-amber-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500 shadow-xs"
               />
             </div>
             <div>
-              <label className="block text-xs font-bold text-amber-900 mb-1">Provider / Issuer</label>
+              <label className="block text-[11px] font-bold text-amber-900 uppercase tracking-wider mb-1">Provider / Authority</label>
               <input
                 type="text"
                 value={formData.provider}
                 onChange={(e) => setFormData({ ...formData, provider: e.target.value })}
-                className="w-full text-xs font-medium px-3.5 py-2 bg-white border border-amber-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500"
+                placeholder="e.g. LIC, RTO, TNEB"
+                className="w-full text-xs font-medium px-3.5 py-2.5 bg-white border border-amber-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500 shadow-xs"
               />
             </div>
             <div>
-              <label className="block text-xs font-bold text-amber-900 mb-1">Expiry / Due Date</label>
+              <label className="block text-[11px] font-bold text-amber-900 uppercase tracking-wider mb-1">Expiry / Due Date</label>
               <input
                 type="date"
                 value={formData.expiryDate}
                 onChange={(e) => setFormData({ ...formData, expiryDate: e.target.value })}
-                className="w-full text-xs font-medium px-3.5 py-2 bg-white border border-amber-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500"
+                className="w-full text-xs font-medium px-3.5 py-2.5 bg-white border border-amber-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500 shadow-xs"
               />
             </div>
-            <div className="md:col-span-3 flex justify-end">
+            <div>
+              <label className="block text-[11px] font-bold text-amber-900 uppercase tracking-wider mb-1">Amount / Premium (₹)</label>
+              <input
+                type="number"
+                step="0.01"
+                value={formData.amount}
+                onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
+                placeholder="e.g. 8450"
+                className="w-full text-xs font-medium px-3.5 py-2.5 bg-white border border-amber-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500 shadow-xs"
+              />
+            </div>
+            <div className="sm:col-span-2 lg:col-span-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2 border-t border-amber-200/60">
+              <span className="text-[11px] text-amber-800 italic">
+                Only confirmed deadlines are synchronized with Google Calendar to protect against false alarms.
+              </span>
               <button
                 type="submit"
                 disabled={isVerifying}
-                className="bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs px-6 py-2.5 rounded-xl shadow-md transition"
+                className="bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs px-6 py-2.5 rounded-xl shadow-md shadow-amber-600/20 transition flex items-center justify-center space-x-1.5"
               >
-                {isVerifying ? 'Confirming...' : 'Confirm & Activate Document'}
+                <ShieldCheck className="w-4 h-4" />
+                <span>{isVerifying ? 'Confirming...' : 'Confirm Information'}</span>
               </button>
             </div>
           </form>
+        </div>
+      ) : (
+        <div className="bg-emerald-50/60 border border-emerald-200 rounded-2xl p-4 flex items-center justify-between text-xs text-emerald-900">
+          <div className="flex items-center space-x-2.5">
+            <ShieldCheck className="w-5 h-5 text-emerald-600" />
+            <span>
+              <strong>Verified by User:</strong> This document's details were checked and confirmed. Active reminders are in sync with your calendar.
+            </span>
+          </div>
+          <button
+            onClick={() => {
+              // Allow re-verifying / editing verified documents
+              setData({ ...data, document: { ...doc, verification_status: 'PENDING' } });
+            }}
+            className="text-[11px] font-bold text-emerald-700 hover:underline shrink-0"
+          >
+            Edit Details
+          </button>
         </div>
       )}
 
       {/* Main Grid: Details + Extracted Actions & Relationships */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Left Column: Metadata & Raw OCR */}
+        {/* Left Column: Plain-Language Summary + Metadata & Raw OCR */}
         <div className="lg:col-span-2 space-y-6">
+          {/* Plain-Language Document Summary (Spec Section 3) */}
+          <div className="bg-white rounded-3xl border border-slate-200/90 p-6 shadow-sm space-y-4">
+            <div className="flex items-center space-x-2 text-indigo-700">
+              <Sparkles className="w-4 h-4" />
+              <h3 className="text-base font-black text-slate-900">Plain-Language Document Summary</h3>
+            </div>
+
+            <div className="p-4 bg-slate-50/80 rounded-2xl border border-slate-100 text-xs text-slate-700 leading-relaxed space-y-2">
+              <p className="font-medium text-slate-800 text-sm">
+                {doc.summary || `${doc.title} issued by ${doc.provider || 'Authority'}.`}
+              </p>
+              {doc.expiry_date && (
+                <p className="text-rose-700 font-semibold">
+                  ⚠️ Expires on <strong>{doc.expiry_date}</strong>. Ensure renewal or compliance is completed prior to this date.
+                </p>
+              )}
+              {doc.amount && (
+                <p className="text-emerald-700 font-semibold">
+                  💳 Payment of <strong>₹{doc.amount}</strong> is associated with this record.
+                </p>
+              )}
+            </div>
+
+            {/* Quick Fact Matrix */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-xs pt-1">
+              <div className="p-3 bg-slate-50 rounded-xl border border-slate-100">
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Document Type</span>
+                <span className="font-bold text-slate-800 mt-0.5 block">{doc.category_name || 'General'}</span>
+              </div>
+              <div className="p-3 bg-slate-50 rounded-xl border border-slate-100">
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Owner / Name</span>
+                <span className="font-bold text-slate-800 mt-0.5 block">{doc.owner_name || 'Account Holder'}</span>
+              </div>
+              <div className="p-3 bg-slate-50 rounded-xl border border-slate-100">
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Reference / Reg No.</span>
+                <span className="font-bold font-mono text-slate-800 mt-0.5 block">{doc.document_number || 'N/A'}</span>
+              </div>
+            </div>
+          </div>
+
           {/* Metadata Card */}
           <div className="bg-white rounded-3xl border border-slate-200/90 p-6 shadow-sm space-y-4">
             <h3 className="text-base font-black text-slate-900">Key Document Fields</h3>
