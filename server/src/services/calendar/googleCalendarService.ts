@@ -50,15 +50,14 @@ export class GoogleCalendarService {
   // Save user-provided Google OAuth credentials
   static async saveCredentials(clientId: string, clientSecret: string): Promise<void> {
     const db = await getDatabase();
-    // Check if system_settings exists, SQLite insert or replace
     await db.query(
-      `INSERT INTO system_settings (key, value) VALUES ('GOOGLE_CLIENT_ID', $1)
-       ON CONFLICT(key) DO UPDATE SET value = $1, updated_at = CURRENT_TIMESTAMP`,
+      `INSERT INTO system_settings (key, value, updated_at) VALUES ('GOOGLE_CLIENT_ID', $1, CURRENT_TIMESTAMP)
+       ON CONFLICT(key) DO UPDATE SET value = EXCLUDED.value, updated_at = CURRENT_TIMESTAMP`,
       [clientId.trim()]
     );
     await db.query(
-      `INSERT INTO system_settings (key, value) VALUES ('GOOGLE_CLIENT_SECRET', $1)
-       ON CONFLICT(key) DO UPDATE SET value = $1, updated_at = CURRENT_TIMESTAMP`,
+      `INSERT INTO system_settings (key, value, updated_at) VALUES ('GOOGLE_CLIENT_SECRET', $1, CURRENT_TIMESTAMP)
+       ON CONFLICT(key) DO UPDATE SET value = EXCLUDED.value, updated_at = CURRENT_TIMESTAMP`,
       [clientSecret.trim()]
     );
     config.googleClientId = clientId.trim();

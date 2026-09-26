@@ -83,18 +83,23 @@ class SQLiteDatabaseClient implements IDatabaseClient {
   }
 
   async query<T = any>(sql: string, params: any[] = []): Promise<{ rows: T[]; rowCount: number }> {
-    // Translate Postgres $1, $2 params to ? for SQLite
-    let sqliteSql = sql.replace(/\$(\d+)/g, '?');
+    // Translate Postgres $1, $2 positional params to ? for SQLite and expand repeated params
+    const paramIndices: number[] = [];
+    const sqliteSql = sql.replace(/\$(\d+)/g, (_match, num) => {
+      paramIndices.push(parseInt(num, 10) - 1);
+      return '?';
+    });
+    const expandedParams = paramIndices.length > 0 ? paramIndices.map((i) => params[i]) : params;
 
     // Simple heuristic: SELECT vs mutations
     const trimmed = sqliteSql.trim().toUpperCase();
     if (trimmed.startsWith('SELECT') || trimmed.startsWith('PRAGMA')) {
       const stmt = this.db.prepare(sqliteSql);
-      const rows = stmt.all(...params) as T[];
+      const rows = stmt.all(...expandedParams) as T[];
       return { rows, rowCount: rows.length };
     } else {
       const stmt = this.db.prepare(sqliteSql);
-      const info = stmt.run(...params);
+      const info = stmt.run(...expandedParams);
       return { rows: [] as T[], rowCount: info.changes };
     }
   }
