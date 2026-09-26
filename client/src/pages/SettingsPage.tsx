@@ -16,7 +16,8 @@ import {
   Sun,
   Moon,
   Trash2,
-  Layers
+  Layers,
+  X
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { api, API_BASE_URL, getAuthToken } from '../services/api';
@@ -42,6 +43,7 @@ export const SettingsPage: React.FC = () => {
   const [syncingAll, setSyncingAll] = useState(false);
   const [downloadingIcs, setDownloadingIcs] = useState(false);
   const [hasCredentials, setHasCredentials] = useState(false);
+  const [showSetupModal, setShowSetupModal] = useState(false);
   const [clientIdInput, setClientIdInput] = useState('');
   const [clientSecretInput, setClientSecretInput] = useState('');
   const [redirectUri, setRedirectUri] = useState(`${API_BASE_URL}/calendar/google/callback`);
@@ -84,17 +86,24 @@ export const SettingsPage: React.FC = () => {
   }, [searchParams]);
 
   const handleConnect = async () => {
+    if (!hasCredentials) {
+      setShowSetupModal(true);
+      return;
+    }
+
     try {
       const res = await api.get('/calendar/google/connect');
       if (res.data.url) {
         window.location.href = res.data.url;
+      } else if (!res.data.configured) {
+        setShowSetupModal(true);
       }
-    } catch (err: any) {
-      toast.error('Google OAuth credentials not configured on server. Please check advanced settings.');
+    } catch {
+      setShowSetupModal(true);
     }
   };
 
-  const handleSaveCredentials = async (e: React.FormEvent) => {
+  const handleSaveCredentials = async (e: React.FormEvent, connectImmediately = false) => {
     e.preventDefault();
     if (!clientIdInput.trim() || !clientSecretInput.trim()) {
       toast.warning('Both Google Client ID and Secret are required.');
@@ -108,7 +117,15 @@ export const SettingsPage: React.FC = () => {
         clientSecret: clientSecretInput.trim(),
       });
       setHasCredentials(true);
-      toast.success('Credentials saved! Click "Connect Google Calendar" to link.');
+      setShowSetupModal(false);
+      toast.success('Credentials saved successfully!');
+
+      if (connectImmediately) {
+        const res = await api.get('/calendar/google/connect');
+        if (res.data.url) {
+          window.location.href = res.data.url;
+        }
+      }
     } catch {
       toast.error('Failed to save OAuth credentials.');
     } finally {
@@ -678,6 +695,137 @@ export const SettingsPage: React.FC = () => {
           )}
         </div>
       </div>
+
+      {/* Google Calendar OAuth Setup Modal */}
+      {showSetupModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-200">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-2xl max-w-lg w-full p-6 sm:p-8 space-y-6 relative">
+            <button
+              onClick={() => setShowSetupModal(false)}
+              className="absolute top-5 right-5 p-2 rounded-xl text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <div className="flex items-center space-x-3">
+              <div className="w-10 h-10 rounded-xl bg-blue-600 text-white flex items-center justify-center shrink-0 shadow-md shadow-blue-500/20">
+                <Calendar className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="text-lg font-black text-slate-900 dark:text-white">
+                  Connect Google Calendar
+                </h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400">
+                  Link with your personal Google account to synchronize real-time deadlines.
+                </p>
+              </div>
+            </div>
+
+            {/* Quick 3-Step Guide */}
+            <div className="p-4 bg-blue-50/60 dark:bg-blue-950/20 border border-blue-100 dark:border-blue-900/30 rounded-2xl space-y-2.5 text-xs text-slate-700 dark:text-slate-300">
+              <span className="font-bold text-blue-900 dark:text-blue-200 text-xs block">
+                How to get your free Google OAuth credentials (1 minute):
+              </span>
+              <ol className="list-decimal list-inside space-y-1.5 text-[11px] leading-relaxed">
+                <li>
+                  Open{' '}
+                  <a
+                    href="https://console.cloud.google.com/apis/credentials"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-blue-600 dark:text-blue-400 font-bold underline inline-flex items-center"
+                  >
+                    Google Cloud Console
+                    <ExternalLink className="w-3 h-3 ml-0.5 inline" />
+                  </a>
+                  {' '}and click <strong>Create Credentials → OAuth client ID</strong> (Web application).
+                </li>
+                <li>
+                  In <strong>Authorized redirect URIs</strong>, paste the URI below.
+                </li>
+                <li>
+                  Paste your <strong>Client ID</strong> and <strong>Client Secret</strong> below and click <strong>Save & Connect</strong>.
+                </li>
+              </ol>
+            </div>
+
+            <form onSubmit={(e) => handleSaveCredentials(e, true)} className="space-y-4 text-xs">
+              <div>
+                <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">
+                  Google Client ID
+                </label>
+                <input
+                  type="text"
+                  value={clientIdInput}
+                  onChange={(e) => setClientIdInput(e.target.value)}
+                  placeholder="e.g. 123456789-xxx.apps.googleusercontent.com"
+                  className="w-full px-3.5 py-2.5 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl font-mono focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">
+                  Google Client Secret
+                </label>
+                <input
+                  type="password"
+                  value={clientSecretInput}
+                  onChange={(e) => setClientSecretInput(e.target.value)}
+                  placeholder="e.g. GOCSPX-xxxxxxxxxxxx"
+                  className="w-full px-3.5 py-2.5 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl font-mono focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">
+                  Authorized Redirect URI (Copy into Google Console)
+                </label>
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="text"
+                    readOnly
+                    value={redirectUri}
+                    className="w-full px-3 py-2 text-xs bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl font-mono text-slate-500 select-all"
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={copyRedirectUri}
+                  >
+                    <Copy className="w-3.5 h-3.5" />
+                    <span>{copiedUri ? 'Copied' : 'Copy'}</span>
+                  </Button>
+                </div>
+              </div>
+
+              <div className="pt-2 flex items-center justify-end space-x-3">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowSetupModal(false)}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  variant="primary"
+                  size="sm"
+                  disabled={savingConfig}
+                  isLoading={savingConfig}
+                  className="bg-blue-600 hover:bg-blue-700 shadow-md shadow-blue-600/20"
+                >
+                  <Zap className="w-3.5 h-3.5 mr-1" />
+                  <span>Save & Connect with Google</span>
+                </Button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

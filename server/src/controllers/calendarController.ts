@@ -11,9 +11,9 @@ export const calendarController = {
       const userId = req.user!.id;
       const result = await GoogleCalendarService.getAuthUrl(userId);
       if (!result.configured) {
-        return res.status(400).json({
+        return res.json({
           configured: false,
-          error: result.message || 'Google OAuth credentials not configured.',
+          error: result.message || 'Google OAuth credentials not configured on server.',
         });
       }
       return res.json({ url: result.url, configured: true });
