@@ -9,6 +9,7 @@ import { vaultController } from '../controllers/vaultController.js';
 import { lifecycleController } from '../controllers/lifecycleController.js';
 import { calendarController } from '../controllers/calendarController.js';
 import { socialImpactController } from '../controllers/socialImpactController.js';
+import { analyticsController } from '../controllers/analyticsController.js';
 import { authenticate } from '../middleware/auth.js';
 import { uploadMiddleware } from '../middleware/upload.js';
 import { getDatabase } from '../config/database.js';
@@ -92,3 +93,6 @@ apiRouter.delete('/calendar/google/event/:reminderId', authenticate, calendarCon
 apiRouter.get('/impact/emergency-kit', authenticate, socialImpactController.getEmergencyKit);
 apiRouter.get('/impact/penalty-savings', authenticate, socialImpactController.getPenaltySavings);
 apiRouter.get('/impact/citizen-rights', authenticate, socialImpactController.getCitizenRightsAdvisor);
+
+// Real-Time Analytics & Intelligence Route
+apiRouter.get('/analytics', authenticate, analyticsController.getAnalytics);
