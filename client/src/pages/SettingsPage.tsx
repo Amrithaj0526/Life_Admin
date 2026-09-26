@@ -10,7 +10,6 @@ import {
   ExternalLink,
   Download,
   Copy,
-  Info,
   User,
   Bell,
   Sun,
@@ -299,168 +298,139 @@ export const SettingsPage: React.FC = () => {
                 {status.connected ? (
                   <div className="space-y-4">
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
-                      <div className="p-4 bg-emerald-50/70 dark:bg-emerald-950/20 rounded-2xl border border-emerald-200/80 dark:border-emerald-900/40 space-y-1">
+                      <div className="p-4 bg-emerald-50/70 dark:bg-emerald-950/20 rounded-xl border border-emerald-200/80 dark:border-emerald-900/40 space-y-1">
                         <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-400 block">
-                          Linked Google Account
+                          Connected Account
                         </span>
-                        <span className="text-slate-900 dark:text-white font-mono font-bold text-xs flex items-center space-x-1.5">
-                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                          <span>{status.email}</span>
+                        <span className="text-slate-900 dark:text-white font-mono font-bold text-xs flex items-center space-x-1.5 truncate">
+                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                          <span className="truncate">{status.email}</span>
                         </span>
                       </div>
 
-                      <div className="p-4 bg-blue-50/70 dark:bg-blue-950/20 rounded-2xl border border-blue-200/80 dark:border-blue-900/40 space-y-1">
+                      <div className="p-4 bg-blue-50/70 dark:bg-blue-950/20 rounded-xl border border-blue-200/80 dark:border-blue-900/40 space-y-1">
                         <span className="text-[10px] font-bold uppercase tracking-wider text-blue-700 dark:text-blue-400 block">
-                          Automatic Sync Status
+                          Auto-Sync
                         </span>
                         <span className="text-blue-900 dark:text-blue-200 font-bold text-xs flex items-center space-x-1.5">
                           <Zap className="w-3.5 h-3.5 text-blue-600" />
-                          <span>ON (Real-Time Alarms)</span>
+                          <span>Active (Real-Time)</span>
                         </span>
                       </div>
 
-                      <div className="p-4 bg-slate-50 dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-1">
+                      <div className="p-4 bg-slate-50 dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 space-y-1">
                         <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">
-                          Device Alarms Schedule
+                          Reminders Schedule
                         </span>
                         <span className="text-slate-800 dark:text-slate-200 font-semibold text-xs">
-                          30d, 7d, and 1d Before Due Date
+                          30d, 7d & 1d Prior
                         </span>
                       </div>
-                    </div>
-
-                    <div className="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-200 dark:border-slate-700 text-xs text-slate-600 dark:text-slate-400 leading-relaxed flex items-start space-x-3">
-                      <Info className="w-4 h-4 text-blue-600 shrink-0 mt-0.5" />
-                      <span>
-                        <strong>Connected once:</strong> Whenever you verify a document deadline in LifeAdmin, an event is automatically scheduled in your Google Calendar. You will receive notifications directly on Android and iOS devices.
-                      </span>
                     </div>
                   </div>
                 ) : (
-                  <div className="space-y-6">
-                    {/* Simple Step-by-Step Explanation for Common Users */}
-                    <div className="p-6 bg-blue-50/50 dark:bg-blue-950/20 border border-blue-100 dark:border-blue-900/30 rounded-2xl space-y-4">
-                      <div className="flex items-center space-x-2 text-blue-900 dark:text-blue-200 font-bold text-sm">
-                        <Calendar className="w-4 h-4 text-blue-600" />
-                        <span>How Calendar Reminders Work</span>
+                  <div className="space-y-4">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between p-5 bg-blue-50/50 dark:bg-blue-950/20 border border-blue-100 dark:border-blue-900/30 rounded-xl gap-4">
+                      <div>
+                        <h4 className="text-sm font-bold text-slate-900 dark:text-white">
+                          Sync Deadlines with Google Calendar
+                        </h4>
+                        <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                          Receive mobile notifications on your phone for all document renewals and bills.
+                        </p>
                       </div>
-                      <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
-                        Connect once. LifeAdmin can add your important deadlines to Google Calendar so you receive notifications on your phone without having to manually check the website.
-                      </p>
-
-                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs pt-2">
-                        <div className="p-3 bg-white dark:bg-slate-800 rounded-xl border border-blue-100 dark:border-blue-900/40 space-y-1">
-                          <span className="text-[10px] font-bold text-blue-600 uppercase">1. One-Click Sign In</span>
-                          <p className="text-[11px] text-slate-600 dark:text-slate-400">Click connect and authorize with your personal Google account.</p>
-                        </div>
-                        <div className="p-3 bg-white dark:bg-slate-800 rounded-xl border border-blue-100 dark:border-blue-900/40 space-y-1">
-                          <span className="text-[10px] font-bold text-blue-600 uppercase">2. Automatic Deadlines</span>
-                          <p className="text-[11px] text-slate-600 dark:text-slate-400">Verified document expiries & bills are scheduled automatically.</p>
-                        </div>
-                        <div className="p-3 bg-white dark:bg-slate-800 rounded-xl border border-blue-100 dark:border-blue-900/40 space-y-1">
-                          <span className="text-[10px] font-bold text-blue-600 uppercase">3. Mobile Notifications</span>
-                          <p className="text-[11px] text-slate-600 dark:text-slate-400">Google Calendar alerts your phone 30, 7, and 1 day prior.</p>
-                        </div>
-                      </div>
-
-                      <div className="pt-2">
-                        <Button
-                          onClick={handleConnect}
-                          disabled={loading}
-                          variant="primary"
-                          size="md"
-                        >
-                          <Zap className="w-4 h-4 mr-2" />
-                          <span>Connect Google Calendar Now</span>
-                        </Button>
-                      </div>
+                      <Button
+                        onClick={handleConnect}
+                        disabled={loading}
+                        variant="primary"
+                        size="md"
+                        className="shadow-sm shrink-0"
+                      >
+                        <Zap className="w-4 h-4 mr-1.5" />
+                        <span>Connect Calendar</span>
+                      </Button>
                     </div>
 
-                    {/* Advanced Custom Credentials Accordion */}
-                    <details className="group border border-slate-200 dark:border-slate-800 rounded-2xl p-4 bg-slate-50/50 dark:bg-slate-900/50">
-                      <summary className="text-xs font-bold text-slate-600 dark:text-slate-400 cursor-pointer flex items-center justify-between">
+                    {/* Compact Custom Credentials Drawer */}
+                    <details className="group border border-slate-200 dark:border-slate-800 rounded-xl p-3 bg-slate-50/40 dark:bg-slate-900/40">
+                      <summary className="text-xs font-semibold text-slate-600 dark:text-slate-400 cursor-pointer flex items-center justify-between">
                         <span className="flex items-center space-x-2">
-                          <Key className="w-3.5 h-3.5 text-slate-500" />
-                          <span>Advanced Settings: Custom Google Cloud OAuth Credentials (Optional)</span>
+                          <Key className="w-3.5 h-3.5 text-slate-400" />
+                          <span>Advanced: Custom OAuth Credentials</span>
                           {hasCredentials && (
-                            <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded-full border border-emerald-200">
+                            <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded-full border border-emerald-200">
                               Configured
                             </span>
                           )}
                         </span>
-                        <span className="text-slate-400 text-[10px] uppercase font-mono group-open:rotate-180 transition-transform">▼</span>
+                        <span className="text-slate-400 text-[10px] group-open:rotate-180 transition-transform">▼</span>
                       </summary>
 
-                      <div className="mt-4 pt-4 border-t border-slate-200 dark:border-slate-800 space-y-4 text-xs">
-                        <p className="text-[11px] text-slate-500">
-                          If you are hosting your own LifeAdmin instance or prefer using your personal Google Cloud OAuth project credentials, supply them below.
-                        </p>
-
-                        <form onSubmit={handleSaveCredentials} className="space-y-3">
+                      <form onSubmit={handleSaveCredentials} className="mt-3 pt-3 border-t border-slate-200 dark:border-slate-800 space-y-3">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                           <div>
-                            <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">
-                              Google Client ID
+                            <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">
+                              Client ID
                             </label>
                             <input
                               type="text"
                               value={clientIdInput}
                               onChange={(e) => setClientIdInput(e.target.value)}
-                              placeholder="e.g. 123456789-xxx.apps.googleusercontent.com"
-                              className="w-full px-3 py-2 text-xs bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg font-mono focus:ring-2 focus:ring-primary-500 focus:outline-none"
+                              placeholder="Google Client ID"
+                              className="w-full px-3 py-1.5 text-xs bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg font-mono focus:ring-1 focus:ring-primary-500 focus:outline-none"
                               required
                             />
                           </div>
-
                           <div>
-                            <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">
-                              Google Client Secret
+                            <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">
+                              Client Secret
                             </label>
                             <input
                               type="password"
                               value={clientSecretInput}
                               onChange={(e) => setClientSecretInput(e.target.value)}
-                              placeholder="e.g. GOCSPX-xxxxxxxxxxxx"
-                              className="w-full px-3 py-2 text-xs bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg font-mono focus:ring-2 focus:ring-primary-500 focus:outline-none"
+                              placeholder="Google Client Secret"
+                              className="w-full px-3 py-1.5 text-xs bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg font-mono focus:ring-1 focus:ring-primary-500 focus:outline-none"
                               required
                             />
                           </div>
+                        </div>
 
-                          <div>
-                            <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">
-                              Authorized Redirect URI
-                            </label>
-                            <div className="flex items-center space-x-2">
-                              <input
-                                type="text"
-                                readOnly
-                                value={redirectUri}
-                                className="w-full px-3 py-1.5 text-xs bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg font-mono text-slate-500 select-all"
-                              />
-                              <Button
-                                type="button"
-                                variant="outline"
-                                size="sm"
-                                onClick={copyRedirectUri}
-                              >
-                                <Copy className="w-3.5 h-3.5" />
-                                <span>{copiedUri ? 'Copied' : 'Copy'}</span>
-                              </Button>
-                            </div>
-                          </div>
-
-                          <div className="pt-2 flex justify-end">
+                        <div>
+                          <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">
+                            Redirect URI
+                          </label>
+                          <div className="flex items-center space-x-2">
+                            <input
+                              type="text"
+                              readOnly
+                              value={redirectUri}
+                              className="w-full px-3 py-1 text-xs bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg font-mono text-slate-500 select-all"
+                            />
                             <Button
-                              type="submit"
-                              variant="primary"
+                              type="button"
+                              variant="outline"
                               size="sm"
-                              disabled={savingConfig}
-                              isLoading={savingConfig}
+                              onClick={copyRedirectUri}
                             >
-                              Save Custom Credentials
+                              <Copy className="w-3.5 h-3.5" />
+                              <span>{copiedUri ? 'Copied' : 'Copy'}</span>
                             </Button>
                           </div>
-                        </form>
-                      </div>
+                        </div>
+
+                        <div className="flex justify-end pt-1">
+                          <Button
+                            type="submit"
+                            variant="primary"
+                            size="sm"
+                            disabled={savingConfig}
+                            isLoading={savingConfig}
+                          >
+                            Save Credentials
+                          </Button>
+                        </div>
+                      </form>
                     </details>
                   </div>
                 )}

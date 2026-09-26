@@ -22,7 +22,6 @@ import {
   CheckCircle2,
   UploadCloud,
   ChevronRight,
-  Database,
   Lock
 } from 'lucide-react';
 import { api } from '../services/api';
@@ -446,58 +445,61 @@ export const AnalyticsPage: React.FC = () => {
         </Card>
       </div>
 
-      {/* 4. Real Operational & Data Security Metrics */}
+      {/* 4. Document Health & Security Overview */}
       <Card>
         <CardHeader>
-          <CardTitle>Operational Health & Data Governance</CardTitle>
+          <CardTitle>Vault Health & Synchronization</CardTitle>
           <CardDescription>
-            Real metrics calculated from your personal account records and encryption layer
+            System summary of your document records, extraction accuracy, and security state
           </CardDescription>
         </CardHeader>
         <CardContent className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 pt-1 text-xs">
           <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800 space-y-1">
             <span className="text-slate-400 font-bold uppercase tracking-wider text-[10px] block">
-              AI/OCR Extraction Confidence
+              Extraction Accuracy
             </span>
             <div className="text-lg font-bold text-slate-900 dark:text-white font-mono flex items-center space-x-1.5">
               <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
               <span>{metrics.avgConfidencePct}</span>
             </div>
-            <p className="text-[10px] text-slate-500">Based on OCR extracted confidence scores</p>
+            <p className="text-[10px] text-slate-500">Average AI confidence across all uploads</p>
           </div>
 
           <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800 space-y-1">
             <span className="text-slate-400 font-bold uppercase tracking-wider text-[10px] block">
               Expired Documents
             </span>
-            <div className="text-lg font-bold text-rose-600 dark:text-rose-400 font-mono">
-              {metrics.expiredDocuments} Documents
+            <div className="text-lg font-bold text-slate-900 dark:text-white font-mono">
+              <span className={metrics.expiredDocuments > 0 ? 'text-rose-600 dark:text-rose-400' : 'text-emerald-600 dark:text-emerald-400'}>
+                {metrics.expiredDocuments}
+              </span>
+              <span className="text-xs font-normal text-slate-400 ml-1">of {metrics.totalDocuments}</span>
             </div>
             <p className="text-[10px] text-slate-500">
-              {metrics.expiredDocuments > 0 ? 'Requires immediate renewal action' : 'Zero expired records'}
+              {metrics.expiredDocuments > 0 ? 'Action required for expired records' : 'All documents currently active'}
             </p>
           </div>
 
           <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800 space-y-1">
             <span className="text-slate-400 font-bold uppercase tracking-wider text-[10px] block">
-              Token & Credential Security
+              Calendar Sync Status
             </span>
-            <div className="text-lg font-bold text-emerald-600 dark:text-emerald-400 flex items-center space-x-1.5">
-              <Lock className="w-4 h-4" />
-              <span>AES-256-GCM</span>
+            <div className="text-lg font-bold text-indigo-600 dark:text-indigo-400 flex items-center space-x-1.5">
+              <Calendar className="w-4 h-4" />
+              <span>{metrics.syncedReminders} Synced</span>
             </div>
-            <p className="text-[10px] text-slate-500">Encrypted OAuth tokens & private keys</p>
+            <p className="text-[10px] text-slate-500">Alarms active on connected devices</p>
           </div>
 
           <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800 space-y-1">
             <span className="text-slate-400 font-bold uppercase tracking-wider text-[10px] block">
-              Storage Engine
+              Vault Privacy
             </span>
-            <div className="text-lg font-bold text-slate-800 dark:text-slate-200 flex items-center space-x-1.5">
-              <Database className="w-4 h-4 text-indigo-500" />
-              <span>WAL Verified</span>
+            <div className="text-lg font-bold text-emerald-600 dark:text-emerald-400 flex items-center space-x-1.5">
+              <Lock className="w-4 h-4" />
+              <span>Encrypted</span>
             </div>
-            <p className="text-[10px] text-slate-500">Consistent atomic transaction checkpoints</p>
+            <p className="text-[10px] text-slate-500">Zero third-party model training</p>
           </div>
         </CardContent>
       </Card>
