@@ -62,6 +62,8 @@ CREATE TABLE IF NOT EXISTS documents (
     confidence REAL DEFAULT 0.0,
     verification_status TEXT DEFAULT 'PENDING', -- PENDING, VERIFIED, REJECTED
     renewal_status TEXT DEFAULT 'NOT_REQUIRED', -- NOT_REQUIRED, UPCOMING, DUE, IN_PROGRESS, RENEWED, EXPIRED
+    analysis_source TEXT DEFAULT 'GEMINI_AI', -- GEMINI_AI, DEMO_FALLBACK, MANUAL
+    is_demo_mode INTEGER DEFAULT 0, -- 0 for real AI/OCR, 1 for demo fallback
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     archived_at TIMESTAMP WITH TIME ZONE
@@ -175,6 +177,14 @@ CREATE TABLE IF NOT EXISTS system_settings (
     key TEXT PRIMARY KEY,
     value TEXT NOT NULL,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 14. OAuth State Verification (Cryptographic CSRF Protection)
+CREATE TABLE IF NOT EXISTS oauth_states (
+    state TEXT PRIMARY KEY,
+    user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    expires_at TIMESTAMP WITH TIME ZONE NOT NULL
 );
 
 -- Indexes for lightning fast queries

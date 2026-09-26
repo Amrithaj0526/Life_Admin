@@ -12,7 +12,7 @@ import {
   AlertCircle
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
-import { api } from '../services/api';
+import { api, API_BASE_URL, getAuthToken } from '../services/api';
 import type { ActionItem } from '../types';
 import { Button } from '../components/ui/button';
 import { Card } from '../components/ui/card';
@@ -70,8 +70,8 @@ export const ActionsPage: React.FC = () => {
 
   const handleDownloadIcs = async () => {
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:5000/api/calendar/export/ics', {
+      const token = getAuthToken();
+      const response = await fetch(`${API_BASE_URL}/calendar/export/ics`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (!response.ok) throw new Error();

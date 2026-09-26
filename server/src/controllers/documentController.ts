@@ -82,8 +82,10 @@ export const documentController = {
               currency = $9,
               summary = $10,
               confidence = $11,
+              analysis_source = $12,
+              is_demo_mode = $13,
               updated_at = CURRENT_TIMESTAMP
-            WHERE id = $12`,
+            WHERE id = $14`,
             [
               analysis.title,
               categoryId,
@@ -96,6 +98,8 @@ export const documentController = {
               analysis.currency || 'USD',
               analysis.summary || null,
               analysis.confidence || 0.9,
+              analysis.analysisSource,
+              analysis.isDemoMode ? 1 : 0,
               documentId,
             ]
           );
@@ -191,7 +195,8 @@ export const documentController = {
         SELECT
           d.id, d.title, d.status, d.provider, d.document_number,
           d.issue_date, d.expiry_date, d.amount, d.currency, d.confidence,
-          d.verification_status, d.renewal_status, d.created_at, d.updated_at,
+          d.verification_status, d.renewal_status, d.analysis_source, d.is_demo_mode,
+          d.created_at, d.updated_at,
           c.name as category_name, c.color as category_color, c.icon as category_icon,
           (SELECT COUNT(*) FROM actions a WHERE a.document_id = d.id AND a.status != 'COMPLETED') as pending_actions_count
         FROM documents d

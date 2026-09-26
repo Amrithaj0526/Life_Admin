@@ -8,7 +8,7 @@ import {
   RefreshCw,
   CheckCircle2
 } from 'lucide-react';
-import { api } from '../services/api';
+import { api, API_BASE_URL, getAuthToken } from '../services/api';
 import type { ActionItem, GoogleCalendarStatus } from '../types';
 import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
@@ -17,7 +17,7 @@ import { getGoogleCalendarWebUrl } from '../utils/calendar';
 import { useToast } from '../context/ToastContext';
 
 export const CalendarPage: React.FC = () => {
-  const [currentDate, setCurrentDate] = useState(new Date(2026, 8, 1)); // Default to Sep 2026
+  const [currentDate, setCurrentDate] = useState(new Date());
   const [actions, setActions] = useState<ActionItem[]>([]);
   const [status, setStatus] = useState<GoogleCalendarStatus>({ connected: false });
   const [selectedEvent, setSelectedEvent] = useState<ActionItem | null>(null);
@@ -56,8 +56,8 @@ export const CalendarPage: React.FC = () => {
 
   const handleDownloadIcs = async () => {
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:5000/api/calendar/export/ics', {
+      const token = getAuthToken();
+      const response = await fetch(`${API_BASE_URL}/calendar/export/ics`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       const blob = await response.blob();

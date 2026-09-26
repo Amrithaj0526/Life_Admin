@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { GoogleCalendarService } from '../services/calendar/googleCalendarService.js';
+import { CryptoService } from '../services/security/cryptoService.js';
 import { getDatabase } from '../config/database.js';
 import { config } from '../config/env.js';
 
@@ -45,14 +46,20 @@ export const calendarController = {
     }
   },
 
-  // 2. OAuth Callback
+  // 2. OAuth Callback with Cryptographic CSRF State Validation
   async handleCallback(req: Request, res: Response) {
     try {
       const { code, state } = req.query;
-      const userId = (state as string) || (req.user?.id);
 
-      if (!code || !userId) {
-        return res.redirect(`${config.clientUrl}/settings?calendar_error=missing_code`);
+      if (!code || !state) {
+        return res.redirect(`${config.clientUrl}/settings?calendar_error=missing_code_or_state`);
+      }
+
+      // Cryptographically validate state to prevent OAuth CSRF attacks
+      const userId = await CryptoService.validateAndConsumeOAuthState(state as string);
+      if (!userId) {
+        console.error('[Calendar Callback] Invalid, expired or forged OAuth state parameter rejected.');
+        return res.redirect(`${config.clientUrl}/settings?calendar_error=invalid_oauth_state`);
       }
 
       await GoogleCalendarService.handleCallback(code as string, userId);

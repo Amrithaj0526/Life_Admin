@@ -66,22 +66,21 @@ Life_Admin/
 │   └── package.json
 │
 ├── database/                    # Relational Database Layer
-│   ├── schema.sql               # PostgreSQL and SQLite compatible 13-table schema
-│   ├── lifeadmin.db             # Local SQLite embedded database (auto-created on start)
-│   └── .gitkeep
+│   ├── schema.sql               # PostgreSQL and SQLite reproducible 14-table schema
+│   └── .gitkeep                 # Preserves folder in clean clones
 │
 ├── docs/                        # Complete Technical Documentation
 │   ├── ARCHITECTURE.md          # In-depth system architecture & security principles
 │   ├── API_REFERENCE.md         # Full REST API endpoint reference
 │   └── DATABASE_SCHEMA.md       # Relational entity schema & table specifications
 │
-├── uploads/                     # Encrypted file storage (UUID-keyed, protected)
+├── uploads/                     # Secure file storage (.gitkeep preserved, isolated)
 ├── .editorconfig                # Universal indentation and charset rules
-├── .env.example                 # Environment configuration template
-├── .gitignore                   # Clean ignore rules (excludes local DB binaries and node_modules)
+├── .env.example                 # Sanitized environment configuration template
+├── .gitignore                   # Enterprise ignore rules (excludes DB binaries, tokens, dist)
 ├── CONTRIBUTING.md              # Contributor guidelines and workflow
 ├── LICENSE                      # MIT Open-Source License
-├── package.json                 # Root monorepo workspace configuration
+├── package.json                 # Monorepo workspace configuration
 ├── README.md                    # Main documentation
 └── run.bat                      # 1-Click Windows development launcher
 ```
@@ -153,6 +152,9 @@ Double-click **`run.bat`** in the project root. It will automatically start both
    - **Citizen Rights & Consumer Legal Advisor:** Contextual legal guidance on IRDAI 30-day claim settlement rules, Consumer Protection Act 2019 warranty remedies, and electricity disconnection notice mandates.
 9. **Field-Level Renewal Diff Analyzer:** Side-by-side field-level comparison comparing year-over-year renewals (e.g., Insurance 2024 $\to$ 2025) highlighting premium changes or altered clauses.
 10. **Zero-Config Dual-Database Engine:** Embedded **SQLite WAL (`lifeadmin.db`)** out of the box for zero-setup execution, with seamless switch to production **PostgreSQL** by setting `DATABASE_URL` in `.env`.
+11. **Cryptographic OAuth CSRF Protection & AES-256-GCM Token Encryption:** Strict single-use, 10-minute expiring cryptographic state tokens protect Google OAuth callbacks from CSRF. Refresh and access tokens are encrypted at rest using AES-256-GCM authenticated encryption.
+12. **Transparent AI & Demo Mode Lifecycle:** System explicitly labels verified Gemini AI extractions versus local offline heuristic preview modes, preventing fabricated mock data from masquerading as real OCR extractions.
+13. **Human-In-The-Loop Verification:** Document metadata must be reviewed and confirmed by the user before transitioning to `ACTIVE` state, ensuring zero hallucinated records pollute actionable calendars.
 
 ---
 

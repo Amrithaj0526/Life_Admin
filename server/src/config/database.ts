@@ -40,7 +40,16 @@ class SQLiteDatabaseClient implements IDatabaseClient {
         this.db.exec(`ALTER TABLE reminders ADD COLUMN updated_at TEXT;`);
       } catch {}
       try {
+        this.db.exec(`ALTER TABLE documents ADD COLUMN analysis_source TEXT DEFAULT 'GEMINI_AI';`);
+      } catch {}
+      try {
+        this.db.exec(`ALTER TABLE documents ADD COLUMN is_demo_mode INTEGER DEFAULT 0;`);
+      } catch {}
+      try {
         this.db.exec(`CREATE TABLE IF NOT EXISTS system_settings (key TEXT PRIMARY KEY, value TEXT NOT NULL, updated_at TEXT DEFAULT (datetime('now')));`);
+      } catch {}
+      try {
+        this.db.exec(`CREATE TABLE IF NOT EXISTS oauth_states (state TEXT PRIMARY KEY, user_id TEXT NOT NULL, created_at TEXT DEFAULT (datetime('now')), expires_at TEXT NOT NULL);`);
       } catch {}
       this.seedDefaultCategories();
     }

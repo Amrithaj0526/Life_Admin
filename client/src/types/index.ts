@@ -28,6 +28,8 @@ export interface DocumentItem {
   confidence?: number;
   verification_status?: 'PENDING' | 'VERIFIED' | 'REJECTED';
   renewal_status?: 'NOT_REQUIRED' | 'UPCOMING' | 'DUE' | 'IN_PROGRESS' | 'RENEWED' | 'EXPIRED';
+  analysis_source?: 'GEMINI_AI' | 'DEMO_FALLBACK' | 'MANUAL';
+  is_demo_mode?: number | boolean;
   pending_actions_count?: number;
   created_at: string;
   updated_at: string;

@@ -20,7 +20,7 @@ import {
   Layers
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
-import { api } from '../services/api';
+import { api, API_BASE_URL, getAuthToken } from '../services/api';
 import type { GoogleCalendarStatus } from '../types';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
@@ -45,7 +45,7 @@ export const SettingsPage: React.FC = () => {
   const [hasCredentials, setHasCredentials] = useState(false);
   const [clientIdInput, setClientIdInput] = useState('');
   const [clientSecretInput, setClientSecretInput] = useState('');
-  const [redirectUri, setRedirectUri] = useState('http://localhost:5000/api/calendar/google/callback');
+  const [redirectUri, setRedirectUri] = useState(`${API_BASE_URL}/calendar/google/callback`);
   const [showConfigSection, setShowConfigSection] = useState(false);
   const [savingConfig, setSavingConfig] = useState(false);
   const [copiedUri, setCopiedUri] = useState(false);
@@ -148,8 +148,8 @@ export const SettingsPage: React.FC = () => {
   const handleDownloadIcs = async () => {
     setDownloadingIcs(true);
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:5000/api/calendar/export/ics', {
+      const token = getAuthToken();
+      const response = await fetch(`${API_BASE_URL}/calendar/export/ics`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       const blob = await response.blob();

@@ -1,6 +1,14 @@
 import axios from 'axios';
 
-const API_BASE_URL = 'http://localhost:5000/api';
+export const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+
+export const getAuthToken = (): string | null => {
+  return localStorage.getItem('lifeadmin_token');
+};
+
+export const getDocumentDownloadUrl = (docId: string): string => {
+  return `${API_BASE_URL}/documents/${docId}/download`;
+};
 
 export const api = axios.create({
   baseURL: API_BASE_URL,

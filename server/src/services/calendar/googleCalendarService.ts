@@ -2,6 +2,7 @@ import { google } from 'googleapis';
 import { v4 as uuidv4 } from 'uuid';
 import { config } from '../../config/env.js';
 import { getDatabase } from '../../config/database.js';
+import { CryptoService } from '../security/cryptoService.js';
 
 export interface CalendarEventPayload {
   summary: string;
@@ -73,7 +74,7 @@ export class GoogleCalendarService {
     );
   }
 
-  // 1. Generate Auth URL for user to grant calendar permission
+  // 1. Generate Auth URL for user to grant calendar permission with cryptographically secure state
   static async getAuthUrl(userId: string): Promise<{ url?: string; configured: boolean; message?: string }> {
     const creds = await this.getEffectiveCredentials();
     if (!creds.clientId || !creds.clientSecret) {
@@ -89,17 +90,20 @@ export class GoogleCalendarService {
       'https://www.googleapis.com/auth/userinfo.email',
     ];
 
+    // Cryptographically random, single-use, 10-minute expiring CSRF state
+    const state = await CryptoService.generateOAuthState(userId);
+
     const url = oauth2Client.generateAuthUrl({
       access_type: 'offline',
       prompt: 'consent',
       scope: scopes,
-      state: userId,
+      state,
     });
 
     return { url, configured: true };
   }
 
-  // 2. Handle OAuth Callback and Save Tokens
+  // 2. Handle OAuth Callback and Save Tokens with AES-256-GCM encryption
   static async handleCallback(code: string, userId: string): Promise<{ email: string }> {
     const db = await getDatabase();
     const creds = await this.getEffectiveCredentials();
@@ -117,6 +121,9 @@ export class GoogleCalendarService {
     const userInfo = await oauth2.userinfo.get();
     const email = userInfo.data.email || 'connected.google.user@gmail.com';
 
+    const encryptedAccessToken = CryptoService.encryptToken(tokens.access_token || '');
+    const encryptedRefreshToken = tokens.refresh_token ? CryptoService.encryptToken(tokens.refresh_token) : null;
+
     await db.query(`DELETE FROM google_calendar_tokens WHERE user_id = $1`, [userId]);
     await db.query(
       `INSERT INTO google_calendar_tokens (id, user_id, email, access_token, refresh_token, scope, token_type, expiry_date, sync_enabled)
@@ -125,8 +132,8 @@ export class GoogleCalendarService {
         uuidv4(),
         userId,
         email,
-        tokens.access_token || '',
-        tokens.refresh_token || null,
+        encryptedAccessToken,
+        encryptedRefreshToken,
         tokens.scope || '',
         tokens.token_type || 'Bearer',
         tokens.expiry_date || null,
@@ -186,6 +193,8 @@ export class GoogleCalendarService {
     }
 
     const tokenData = tokenRes.rows[0];
+    const decryptedAccessToken = CryptoService.decryptToken(tokenData.access_token);
+    const decryptedRefreshToken = tokenData.refresh_token ? CryptoService.decryptToken(tokenData.refresh_token) : undefined;
 
     // Check if event already exists
     const remRes = await db.query(
@@ -197,7 +206,7 @@ export class GoogleCalendarService {
     const creds = await this.getEffectiveCredentials();
 
     // Check if running in mock/offline mode without client credentials
-    if (!creds.clientId || tokenData.access_token === 'demo_access_token') {
+    if (!creds.clientId || decryptedAccessToken === 'demo_access_token') {
       const generatedEventId = existingEventId || `gcal_${uuidv4().replace(/-/g, '').slice(0, 16)}`;
       await db.query(
         `UPDATE reminders SET google_calendar_event_id = $1, calendar_sync_status = 'SYNCED', channel = 'GOOGLE_CALENDAR', updated_at = CURRENT_TIMESTAMP WHERE id = $2`,
@@ -209,8 +218,8 @@ export class GoogleCalendarService {
     try {
       const oauth2Client = await this.getOAuth2Client();
       oauth2Client.setCredentials({
-        access_token: tokenData.access_token,
-        refresh_token: tokenData.refresh_token,
+        access_token: decryptedAccessToken,
+        refresh_token: decryptedRefreshToken,
       });
 
       const calendar = google.calendar({ version: 'v3', auth: oauth2Client });
@@ -283,17 +292,21 @@ export class GoogleCalendarService {
     );
 
     const creds = await this.getEffectiveCredentials();
-    if (tokenRes.rows.length > 0 && creds.clientId && tokenRes.rows[0].access_token !== 'demo_access_token') {
-      try {
-        const oauth2Client = await this.getOAuth2Client();
-        oauth2Client.setCredentials({
-          access_token: tokenRes.rows[0].access_token,
-          refresh_token: tokenRes.rows[0].refresh_token,
-        });
-        const calendar = google.calendar({ version: 'v3', auth: oauth2Client });
-        await calendar.events.delete({ calendarId: 'primary', eventId });
-      } catch (err) {
-        console.warn('[Google Calendar Delete Event Warning]', err);
+    if (tokenRes.rows.length > 0 && creds.clientId) {
+      const decryptedAccessToken = CryptoService.decryptToken(tokenRes.rows[0].access_token);
+      const decryptedRefreshToken = tokenRes.rows[0].refresh_token ? CryptoService.decryptToken(tokenRes.rows[0].refresh_token) : undefined;
+      if (decryptedAccessToken !== 'demo_access_token') {
+        try {
+          const oauth2Client = await this.getOAuth2Client();
+          oauth2Client.setCredentials({
+            access_token: decryptedAccessToken,
+            refresh_token: decryptedRefreshToken,
+          });
+          const calendar = google.calendar({ version: 'v3', auth: oauth2Client });
+          await calendar.events.delete({ calendarId: 'primary', eventId });
+        } catch (err) {
+          console.warn('[Google Calendar Delete Event Warning]', err);
+        }
       }
     }
 

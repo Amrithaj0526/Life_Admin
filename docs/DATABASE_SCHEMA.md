@@ -59,6 +59,8 @@ The LifeAdmin schema is designed with high-concurrency production PostgreSQL com
 - `confidence` (REAL): OCR/AI confidence metric (0.0 to 1.0).
 - `verification_status` (TEXT): `PENDING`, `VERIFIED`, `REJECTED`.
 - `renewal_status` (TEXT): `NOT_REQUIRED`, `UPCOMING`, `DUE`, `IN_PROGRESS`, `RENEWED`, `EXPIRED`.
+- `analysis_source` (TEXT): `GEMINI_AI`, `DEMO_FALLBACK`, `MANUAL`.
+- `is_demo_mode` (INTEGER): `0` for verified neural AI extraction, `1` for offline heuristic preview.
 
 ### 5. `document_versions`
 - Implements version tracking and field diffing across renewals (e.g. 2024 $\to$ 2025 policies).
@@ -87,10 +89,15 @@ The LifeAdmin schema is designed with high-concurrency production PostgreSQL com
 - `calendar_sync_status` (TEXT): `NOT_CONNECTED`, `PENDING`, `SYNCED`, `FAILED`, `DISCONNECTED`.
 
 ### 9. `google_calendar_tokens`
-- Stores OAuth 2.0 access & refresh tokens, token expiry, and user Gmail address securely.
+- Stores OAuth 2.0 credentials per user.
+- **Security:** Access and refresh tokens are encrypted at rest using server-side AES-256-GCM authenticated encryption.
 
-### 10. `audit_logs`
+### 10. `oauth_states`
+- Cryptographic CSRF state validation table.
+- Stores single-use, 10-minute expiring tokens (`state`, `user_id`, `created_at`, `expires_at`) to secure Google OAuth redirects.
+
+### 11. `audit_logs`
 - Append-only immutable log recording all uploads, AI extractions, verifications, diff inspections, and calendar sync events.
 
-### 11. `system_settings`
+### 12. `system_settings`
 - Dynamic key-value store for Google OAuth credentials and platform configs.

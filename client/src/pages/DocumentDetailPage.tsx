@@ -7,10 +7,12 @@ import {
   ShieldCheck,
   RefreshCw,
   GitCompare,
-  UploadCloud
+  UploadCloud,
+  Info,
+  Sparkles
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
-import { api } from '../services/api';
+import { api, getDocumentDownloadUrl } from '../services/api';
 import type { FieldDiff } from '../types';
 
 export const DocumentDetailPage: React.FC = () => {
@@ -142,21 +144,35 @@ export const DocumentDetailPage: React.FC = () => {
       {/* Top Header Card */}
       <div className="bg-white p-6 rounded-3xl border border-slate-200/90 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <div className="flex items-center space-x-3 mb-1.5">
-            <span className="text-xs font-bold px-2.5 py-0.5 rounded-lg bg-slate-100 text-slate-700">
+          <div className="flex flex-wrap items-center gap-2 mb-1.5">
+            <span className="text-xs font-bold px-2.5 py-0.5 rounded-lg bg-slate-100 dark:bg-neutral-800 text-slate-700 dark:text-neutral-300">
               {doc.category_name || 'General'}
             </span>
+
+            {/* AI / Demo Intelligence Transparency Badge */}
+            {doc.is_demo_mode || doc.analysis_source === 'DEMO_FALLBACK' ? (
+              <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/30 inline-flex items-center space-x-1.5" title="Analyzed using offline heuristic rule engine">
+                <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>
+                <span>Demo analysis mode</span>
+              </span>
+            ) : (
+              <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-indigo-500/10 text-indigo-700 dark:text-indigo-400 border border-indigo-500/30 inline-flex items-center space-x-1.5" title="Deep neural extraction powered by Gemini AI">
+                <Sparkles className="w-3 h-3 text-indigo-500" />
+                <span>Gemini AI Analyzed</span>
+              </span>
+            )}
+
             <span
               className={`text-xs font-bold px-2.5 py-0.5 rounded-full ${
                 doc.verification_status === 'VERIFIED'
-                  ? 'bg-emerald-100 text-emerald-800'
-                  : 'bg-amber-100 text-amber-800'
+                  ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300'
+                  : 'bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-300'
               }`}
             >
               {doc.verification_status === 'VERIFIED' ? 'Verified Extraction' : 'Needs User Verification'}
             </span>
             {doc.renewal_status && doc.renewal_status !== 'NOT_REQUIRED' && (
-              <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-purple-100 text-purple-800">
+              <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-purple-100 text-purple-800 dark:bg-purple-950/40 dark:text-purple-300">
                 Renewal: {doc.renewal_status}
               </span>
             )}
@@ -188,10 +204,10 @@ export const DocumentDetailPage: React.FC = () => {
           )}
 
           <a
-            href={`http://localhost:5000/api/documents/${id}/download`}
+            href={getDocumentDownloadUrl(id!)}
             target="_blank"
             rel="noreferrer"
-            className="inline-flex items-center space-x-1.5 px-3.5 py-2 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 hover:bg-slate-50 transition"
+            className="inline-flex items-center space-x-1.5 px-3.5 py-2 border border-slate-200 dark:border-neutral-800 rounded-xl text-xs font-bold text-slate-700 dark:text-neutral-300 hover:bg-slate-50 dark:hover:bg-neutral-900 transition"
           >
             <Download className="w-4 h-4" />
             <span>Download</span>
@@ -206,6 +222,21 @@ export const DocumentDetailPage: React.FC = () => {
           </button>
         </div>
       </div>
+
+      {/* Demo Analysis Transparency Notice */}
+      {(doc.is_demo_mode || doc.analysis_source === 'DEMO_FALLBACK') && (
+        <div className="bg-amber-500/10 border border-amber-500/30 rounded-2xl p-4 flex items-start space-x-3 text-xs text-amber-800 dark:text-amber-300">
+          <Info className="w-5 h-5 text-amber-600 dark:text-amber-400 mt-0.5 flex-shrink-0" />
+          <div className="space-y-1">
+            <p className="font-bold text-sm text-amber-900 dark:text-amber-200">
+              Demo Analysis Mode Active
+            </p>
+            <p className="text-amber-800/90 dark:text-amber-300/90 leading-relaxed">
+              This document was analyzed using offline heuristic preview rules without an active Gemini API key. Please review, edit, and confirm the extracted values below. To enable production deep multimodal extraction, provide your Gemini API key in server configuration.
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Human-In-The-Loop Verification Card */}
       {doc.verification_status !== 'VERIFIED' && (

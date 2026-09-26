@@ -102,9 +102,15 @@
 
 1. **Zero Content Leakage to External Services:**
    Only abstract metadata (e.g., `[LifeAdmin] Vehicle Insurance Renewal` and due date `2026-10-15`) is sent to Google Calendar. Sensitive identifiers, vehicle VIN numbers, and financial details are NEVER exported.
-2. **Encrypted Storage:**
-   Original filenames are decoupled from filesystem paths. Storage uses UUID-based keys.
-3. **Stateless JWT Authentication:**
-   Token expiry enforced with bcrypt salt rounds (10) for credential protection.
-4. **Immutable Audit Trail:**
+2. **Cryptographic OAuth CSRF Protection:**
+   Single-use, 10-minute expiring cryptographic state tokens (`crypto.randomBytes(32)`) are stored in `oauth_states` and strictly validated upon OAuth callback.
+3. **AES-256-GCM Token Encryption at Rest:**
+   Google OAuth access and refresh tokens are encrypted in the database using AES-256-GCM authenticated encryption, preventing credential exposure even in the event of database access.
+4. **AI & OCR Transparency Engine:**
+   Explicit differentiation between deep neural Gemini extraction and offline heuristic preview rules, preventing mock data from masquerading as verified OCR facts.
+5. **Decoupled File Storage:**
+   Original filenames are decoupled from filesystem paths. Storage uses UUID-based keys with MIME-type integrity checks.
+6. **Stateless JWT Authentication:**
+   Token expiry enforced with bcrypt salt rounds (10) for credential protection and environment-enforced production secrets.
+7. **Immutable Audit Trail:**
    All document creations, modifications, AI extractions, and status transitions append to the `audit_logs` table.

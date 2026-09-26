@@ -228,18 +228,29 @@ export const DocumentsPage: React.FC = () => {
 
                   <div className="flex items-center justify-between">
                     <span className="text-slate-400">Status</span>
-                    <Badge
-                      variant={
-                        doc.status === 'ACTIVE'
-                          ? 'success'
-                          : doc.status === 'NEEDS_REVIEW'
-                          ? 'warning'
-                          : 'neutral'
-                      }
-                      size="sm"
-                    >
-                      {doc.status}
-                    </Badge>
+                    <div className="flex items-center space-x-1.5">
+                      {doc.is_demo_mode || doc.analysis_source === 'DEMO_FALLBACK' ? (
+                        <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20" title="Analyzed in demo heuristic mode">
+                          Demo
+                        </span>
+                      ) : (
+                        <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20" title="Analyzed with Gemini AI">
+                          AI
+                        </span>
+                      )}
+                      <Badge
+                        variant={
+                          doc.status === 'ACTIVE'
+                            ? 'success'
+                            : doc.status === 'NEEDS_REVIEW'
+                            ? 'warning'
+                            : 'neutral'
+                        }
+                        size="sm"
+                      >
+                        {doc.status}
+                      </Badge>
+                    </div>
                   </div>
                 </div>
 
@@ -309,18 +320,29 @@ export const DocumentsPage: React.FC = () => {
                     {doc.expiry_date || 'None'}
                   </td>
                   <td className="py-3 px-4">
-                    <Badge
-                      variant={
-                        doc.status === 'ACTIVE'
-                          ? 'success'
-                          : doc.status === 'NEEDS_REVIEW'
-                          ? 'warning'
-                          : 'neutral'
-                      }
-                      size="sm"
-                    >
-                      {doc.status}
-                    </Badge>
+                    <div className="flex items-center space-x-1.5">
+                      <Badge
+                        variant={
+                          doc.status === 'ACTIVE'
+                            ? 'success'
+                            : doc.status === 'NEEDS_REVIEW'
+                            ? 'warning'
+                            : 'neutral'
+                        }
+                        size="sm"
+                      >
+                        {doc.status}
+                      </Badge>
+                      {doc.is_demo_mode || doc.analysis_source === 'DEMO_FALLBACK' ? (
+                        <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20" title="Analyzed in demo heuristic mode">
+                          Demo
+                        </span>
+                      ) : (
+                        <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20" title="Analyzed with Gemini AI">
+                          AI
+                        </span>
+                      )}
+                    </div>
                   </td>
                   <td className="py-3 px-4 text-right space-x-2">
                     <Link

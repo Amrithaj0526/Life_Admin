@@ -35,6 +35,8 @@ export const DocumentAnalysisResultSchema = z.object({
   currency: z.string().optional(),
   summary: z.string().optional(),
   confidence: z.number().min(0).max(1).default(0.9),
+  isDemoMode: z.boolean().default(false),
+  analysisSource: z.enum(['GEMINI_AI', 'DEMO_FALLBACK', 'MANUAL']).default('GEMINI_AI'),
   fields: z.array(ExtractedFieldSchema).default([]),
   actions: z.array(ExtractedActionSchema).default([]),
   relationships: z.array(ExtractedRelationshipSchema).default([]),
@@ -98,7 +100,11 @@ ${ocrText.slice(0, 4000)}
         const raw = response.text?.trim() || '{}';
         const cleaned = raw.replace(/^```json\s*/i, '').replace(/\s*```$/i, '').trim();
         const parsed = JSON.parse(cleaned);
-        return DocumentAnalysisResultSchema.parse(parsed);
+        return DocumentAnalysisResultSchema.parse({
+          ...parsed,
+          isDemoMode: false,
+          analysisSource: 'GEMINI_AI',
+        });
       } catch (err) {
         console.warn('[AIService] Gemini API call failed or schema mismatch, using robust rule-based analyzer:', err);
       }
@@ -238,8 +244,10 @@ ${ocrText.slice(0, 4000)}
       expiryDate,
       amount,
       currency,
-      summary: `Automated intelligent extraction: ${title}. Key deadlines and action items parsed.`,
-      confidence: 0.92,
+      summary: `[Demo Analysis Mode] Heuristic preview extracted for "${title}". To enable production deep multimodal extraction, ensure GEMINI_API_KEY is configured.`,
+      confidence: 0.70,
+      isDemoMode: true,
+      analysisSource: 'DEMO_FALLBACK',
       fields,
       actions,
       relationships,

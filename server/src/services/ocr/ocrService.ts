@@ -33,12 +33,12 @@ export class HybridOCRService implements IOCRService {
         return ret.data.text.trim();
       }
 
-      // Fallback / Fast mock or text parser
+      // Fallback when Tesseract OCR engine is set to mock or disabled
       const filename = path.basename(filePath);
-      return `Sample OCR Extracted Content from ${filename}.\nDocument verified on ${new Date().toISOString()}`;
+      return `[Demo Text Extraction] Preview content for ${filename}.\nNo deep optical characters scanned. Configure Tesseract OCR or Gemini Vision to extract full document text.`;
     } catch (err: any) {
       console.warn(`[OCR] Error extracting text from ${filePath}:`, err.message);
-      return `Document Text Extraction Completed for ${path.basename(filePath)}`;
+      return `[Text Extraction Note] Could not parse raw text from ${path.basename(filePath)} (${err.message}).`;
     }
   }
 }

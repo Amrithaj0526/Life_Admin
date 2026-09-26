@@ -10,7 +10,7 @@ import {
   CheckCircle2,
   ExternalLink
 } from 'lucide-react';
-import { api } from '../services/api';
+import { api, getDocumentDownloadUrl } from '../services/api';
 
 export const SocialImpactPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'emergency' | 'savings' | 'rights'>('emergency');
@@ -173,7 +173,7 @@ export const SocialImpactPage: React.FC = () => {
                           Exp: {doc.expiry_date || 'No Expiry'}
                         </span>
                         <a
-                          href={`http://localhost:5000/api/documents/${doc.id}/download`}
+                          href={getDocumentDownloadUrl(doc.id)}
                           target="_blank"
                           rel="noreferrer"
                           className="text-[11px] font-bold text-emerald-600 hover:underline mt-1 inline-block"
